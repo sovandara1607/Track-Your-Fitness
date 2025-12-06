@@ -1,10 +1,11 @@
-// https://docs.expo.dev/guides/using-eslint/
-const { defineConfig } = require('eslint/config');
-const expoConfig = require('eslint-config-expo/flat');
 
-module.exports = defineConfig([
-  expoConfig,
-  {
-    ignores: ['dist/*'],
-  },
-]);
+
+import convexPlugin from "@convex-dev/eslint-plugin";
+import tseslint from "typescript-eslint";
+
+export default [
+    { ignores: ["node_modules/", "convex/_generated/"] },
+    ...tseslint.configs.recommended,
+    ...convexPlugin.configs.recommended,
+];
+

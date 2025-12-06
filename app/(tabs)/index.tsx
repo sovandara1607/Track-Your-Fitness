@@ -1,36 +1,76 @@
-import { Text, View, StyleSheet } from "react-native";
-import { Link } from "expo-router";
 
-export default function Index() {
+
+import React from "react";
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, borderRadius } from "@/constants/theme";
+import { Platform, StyleSheet, View } from "react-native";
+
+export default function TabLayout() {
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: styles.tabBar,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
-      <Text>Click Login</Text>
-      <Link href="/Login" style={styles.button}>
-        <Text style={styles.buttonText}>Login Page</Text>
-      </Link>
-    </View>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="workouts"
+        options={{
+          title: "Workouts",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="barbell" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="progress"
+        options={{
+          title: "Progress",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="trending-up" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" size={size} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
   );
 }
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  tabBar: {
+    backgroundColor: colors.surface,
+    borderTopWidth: 0,
+    height: Platform.OS === "ios" ? 88 : 70,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === "ios" ? 28 : 12,
+    elevation: 0,
+    shadowOpacity: 0,
   },
-  button: {
-    width: 100,
-    height: 20,
-    backgroundColor: "coral",
-    borderRadius: 8,
-    textAlign: "center",
-  },
-  buttonText: {
-    color: "blue",
+  tabBarLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 4,
   },
 });
