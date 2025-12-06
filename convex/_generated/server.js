@@ -1,5 +1,3 @@
-
-
 /* eslint-disable */
 /**
  * Generated utilities for implementing server-side Convex query and mutation functions.
@@ -18,7 +16,6 @@ import {
   internalActionGeneric,
   internalMutationGeneric,
   internalQueryGeneric,
-  componentsGeneric,
 } from "convex/server";
 
 /**
@@ -57,8 +54,7 @@ export const mutation = mutationGeneric;
  * This function will be allowed to modify your Convex database. It will not be accessible from the client.
  *
  * @param func - The mutation function. It receives a {@link MutationCtx} as its first argument.
- * @returns The wrapped mutation. Include this as an `exp
-ort` to name it and make it accessible.
+ * @returns The wrapped mutation. Include this as an `export` to name it and make it accessible.
  */
 export const internalMutation = internalMutationGeneric;
 
@@ -84,11 +80,14 @@ export const action = actionGeneric;
 export const internalAction = internalActionGeneric;
 
 /**
- * Define a Convex HTTP action.
+ * Define an HTTP action.
  *
- * @param func - The function. It receives an {@link ActionCtx} as its first argument, and a `Request` object
- * as its second.
- * @returns The wrapped endpoint function. Route a URL path to this function in `convex/http.js`.
+ * The wrapped function will be used to respond to HTTP requests received
+ * by a Convex deployment if the requests matches the path and method where
+ * this action is routed. Be sure to route your httpAction in `convex/http.js`.
+ *
+ * @param func - The function. It receives an {@link ActionCtx} as its first argument
+ * and a Fetch API `Request` object as its second.
+ * @returns The wrapped function. Import this function from `convex/http.js` and route it to hook it up.
  */
 export const httpAction = httpActionGeneric;
-

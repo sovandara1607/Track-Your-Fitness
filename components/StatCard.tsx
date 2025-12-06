@@ -1,5 +1,3 @@
-
-
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { colors, spacing, borderRadius, typography } from "@/constants/theme";

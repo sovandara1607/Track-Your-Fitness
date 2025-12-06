@@ -1,7 +1,5 @@
-
-
 import { v } from "convex/values";
-import { authQuery, authMutation } from "./functions";
+import { authMutation, authQuery } from "./functions";
 
 const setValidator = v.object({
   reps: v.number(),
@@ -75,8 +73,7 @@ export const create = authMutation({
         maxReps,
         date: Date.now(),
       });
-    } else if (maxWeight > exist
-ingPR.maxWeight || maxReps > existingPR.maxReps) {
+    } else if (maxWeight > existingPR.maxWeight || maxReps > existingPR.maxReps) {
       await ctx.db.patch(existingPR._id, {
         maxWeight: Math.max(maxWeight, existingPR.maxWeight),
         maxReps: Math.max(maxReps, existingPR.maxReps),

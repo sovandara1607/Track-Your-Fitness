@@ -1,7 +1,7 @@
 
 
 import { v } from "convex/values";
-import { authQuery, authMutation } from "./functions";
+import { authMutation, authQuery } from "./functions";
 
 const templateValidator = v.object({
   _id: v.id("exerciseTemplates"),
@@ -65,8 +65,7 @@ export const seedDefaults = authMutation({
       { name: "Deadlift", category: "back", defaultSets: 4, defaultReps: 6, defaultWeight: 225 },
       { name: "Pull-ups", category: "back", defaultSets: 3, defaultReps: 10, defaultWeight: 0 },
       { name: "Barbell Row", category: "back", defaultSets: 4, defaultReps: 10, defaultWeight: 135 },
-      { name: "
-Squat", category: "legs", defaultSets: 4, defaultReps: 8, defaultWeight: 185 },
+      { name: "Squat", category: "legs", defaultSets: 4, defaultReps: 8, defaultWeight: 185 },
       { name: "Leg Press", category: "legs", defaultSets: 3, defaultReps: 12, defaultWeight: 270 },
       { name: "Romanian Deadlift", category: "legs", defaultSets: 3, defaultReps: 10, defaultWeight: 135 },
       { name: "Overhead Press", category: "shoulders", defaultSets: 4, defaultReps: 10, defaultWeight: 95 },

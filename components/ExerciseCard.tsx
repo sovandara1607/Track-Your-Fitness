@@ -1,5 +1,3 @@
-
-
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { colors, spacing, borderRadius, typography, getCategoryColor } from "@/constants/theme";
@@ -143,8 +141,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: co
-lors.surface,
+    borderBottomColor: colors.surface,
   },
   setHeaderText: {
     ...typography.small,

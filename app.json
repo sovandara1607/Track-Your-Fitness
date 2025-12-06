@@ -34,14 +34,10 @@
           "resizeMode": "contain",
           "backgroundColor": "#FAFAFA"
         }
-      ],
-      "expo-secure-store",
-      "expo-font",
-      "expo-web-browser"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
-    },
-    "displayName": "Track Your Fitness"
+    }
   }
 }

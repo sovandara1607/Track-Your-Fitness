@@ -1,24 +1,23 @@
-
-
+import { Button } from "@/components/Button";
+import { EmptyState } from "@/components/EmptyState";
+import { WorkoutCard } from "@/components/WorkoutCard";
+import { borderRadius, colors, spacing, typography } from "@/constants/theme";
+import { api } from "@/convex/_generated/api";
+import { Doc } from "@/convex/_generated/dataModel";
+import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "convex/react";
+import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import React from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { colors, spacing, borderRadius, typography } from "@/constants/theme";
-import { Ionicons } from "@expo/vector-icons";
-import { WorkoutCard } from "@/components/WorkoutCard";
-import { EmptyState } from "@/components/EmptyState";
-import { Button } from "@/components/Button";
-import { router } from "expo-router";
-import * as Haptics from "expo-haptics";
 
 export default function WorkoutsScreen() {
   const workouts = useQuery(api.workouts.list);
@@ -27,7 +26,7 @@ export default function WorkoutsScreen() {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    router.push("/new-workout");
+    router.push("/new-workout" as any);
   };
 
   // Group workouts by month
@@ -35,7 +34,7 @@ export default function WorkoutsScreen() {
     if (!workouts) return {};
 
     const groups: Record<string, typeof workouts> = {};
-    workouts.forEach((workout) => {
+    workouts.forEach((workout: Doc<"workouts">) => {
       const date = new Date(workout.date);
       const key = date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
       if (!groups[key]) groups[key] = [];
@@ -81,14 +80,14 @@ export default function WorkoutsScreen() {
           Object.entries(groupedWorkouts).map(([month, monthWorkouts]) => (
             <View key={month} style={styles.monthSection}>
               <Text style={styles.monthTitle}>{month}</Text>
-              {monthWorkouts.map((workout) => (
+              {monthWorkouts.map((workout: Doc<"workouts">) => (
                 <WorkoutCard
                   key={workout._id}
                   name={workout.name}
                   date={workout.date}
                   duration={workout.duration}
                   completed={workout.completed}
-                  onPress={() => router.push(`/workout/${workout._id}`)}
+                  onPress={() => router.push(`/workout/${workout._id}` as any)}
                 />
               ))}
             </View>

@@ -1,8 +1,5 @@
-
-
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
-import { authQuery, authMutation } from "./functions";
+import { authMutation, authQuery } from "./functions";
 
 export const list = authQuery({
   args: {},
@@ -84,8 +81,7 @@ export const create = authMutation({
     notes: v.optional(v.string()),
   },
   returns: v.id("workouts"),
-  handler: async (c
-tx, args) => {
+  handler: async (ctx, args) => {
     const workoutId = await ctx.db.insert("workouts", {
       userId: ctx.user._id,
       name: args.name,
