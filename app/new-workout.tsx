@@ -1,25 +1,25 @@
 
 
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  Platform,
-  Modal,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { colors, spacing, borderRadius, typography, getCategoryColor } from "@/constants/theme";
-import { Ionicons } from "@expo/vector-icons";
 import { Button } from "@/components/Button";
 import { ExerciseCard } from "@/components/ExerciseCard";
-import { router } from "expo-router";
+import { borderRadius, colors, getCategoryColor, spacing, typography } from "@/constants/theme";
+import { api } from "@/convex/_generated/api";
+import { Ionicons } from "@expo/vector-icons";
+import { useMutation, useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
+import React, { useState } from "react";
+import {
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface ExerciseData {
   name: string;
@@ -250,8 +250,7 @@ tton */}
                       <Text style={styles.templateDetails}>
                         {template.defaultSets} sets × {template.defaultReps} reps
                         {template.defaultWeight > 0 && ` @ ${template.defaultWeight} lbs`}
-                      <
-/Text>
+                      </Text>
                     </View>
                     <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
                   </TouchableOpacity>

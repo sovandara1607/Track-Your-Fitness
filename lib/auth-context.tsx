@@ -1,10 +1,13 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { ID, Models } from "react-native-appwrite";
-import { account } from "./appwrite";
+import { createContext, useContext, useState } from "react";
 
+type User = {
+    id: string;
+    email: string;
+    name?: string;
+};
 
 type AuthContextType = {
-    user: Models.User<Models.Preferences> | null;
+    user: User | null;
     signUp: (email: string, password: string) => Promise<string | null>;
     signIn: (email: string, password: string) => Promise<string | null>;
     signOut: () => Promise<void>;
@@ -15,59 +18,25 @@ type AuthContextType = {
 
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(false);
 
-    // Check if user is already logged in on app start
-    useEffect(() => {
-        checkUser();
-    }, []);
-
-    const checkUser = async () => {
-        try {
-            const currentUser = await account.get();
-            setUser(currentUser);
-        } catch (error) {
-            setUser(null);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Better Auth handles authentication via Convex
+    // This is a compatibility layer for any components that might use this context
     
     const signUp = async (email: string, password: string) => {
-        try {
-            await account.create(ID.unique(), email, password);
-            await signIn(email, password);
-            return null;
-        } catch (error) {
-            if (error instanceof Error) {
-                return error.message;
-            }
-            return "An unknown error occurred";
-        }
+        // Handled by Better Auth
+        return "Use Better Auth for authentication";
     };
     
     const signIn = async (email: string, password: string) => {
-        try {
-            await account.createEmailPasswordSession(email, password);
-            const currentUser = await account.get();
-            setUser(currentUser);
-            return null;
-        } catch (error) {
-            if (error instanceof Error) {
-                return error.message;
-            }
-            return "An unknown error occurred during sign-in";
-        }
+        // Handled by Better Auth
+        return "Use Better Auth for authentication";
     };
 
     const signOut = async () => {
-        try {
-            await account.deleteSession('current');
-            setUser(null);
-        } catch (error) {
-            console.error('Sign out error:', error);
-        }
+        // Handled by Better Auth
+        setUser(null);
     };
 
     return (

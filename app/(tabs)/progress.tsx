@@ -1,20 +1,20 @@
 
 
+import { EmptyState } from "@/components/EmptyState";
+import { StatCard } from "@/components/StatCard";
+import { borderRadius, colors, spacing, typography } from "@/constants/theme";
+import { api } from "@/convex/_generated/api";
+import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "convex/react";
 import React from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
   Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { colors, spacing, borderRadius, typography, getCategoryColor } from "@/constants/theme";
-import { Ionicons } from "@expo/vector-icons";
-import { StatCard } from "@/components/StatCard";
-import { EmptyState } from "@/components/EmptyState";
 
 const { width } = Dimensions.get("window");
 
@@ -62,8 +62,7 @@ export default function ProgressScreen() {
           <Text style={styles.sectionTitle}>This Week</Text>
           <View style={styles.activityCard}>
             <View style={styles.activityGrid}>
-              {weeklyAc
-tivity.map((level, index) => (
+              {weeklyActivity.map((level, index) => (
                 <View key={index} style={styles.activityDay}>
                   <View
                     style={[

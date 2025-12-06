@@ -27,7 +27,7 @@ export const listByWorkout = authQuery({
       .collect();
 
     return exercises
-      .filter((e) => e.userId === ctx.user._id)
+      .filter((e) => e.userId === "demo-user")
       .sort((a, b) => a.order - b.order);
   },
 });
@@ -42,13 +42,13 @@ export const create = authMutation({
   returns: v.id("exercises"),
   handler: async (ctx, args) => {
     const workout = await ctx.db.get(args.workoutId);
-    if (!workout || workout.userId !== ctx.user._id) {
+    if (!workout || workout.userId !== "demo-user") {
       throw new Error("Workout not found");
     }
 
     const exerciseId = await ctx.db.insert("exercises", {
       workoutId: args.workoutId,
-      userId: ctx.user._id,
+      userId: "demo-user",
       name: args.name,
       sets: args.sets,
       order: args.order,
@@ -61,13 +61,13 @@ export const create = authMutation({
     const existingPR = await ctx.db
       .query("personalRecords")
       .withIndex("by_user_id_and_exercise", (q) =>
-        q.eq("userId", ctx.user._id).eq("exerciseName", args.name)
+        q.eq("userId", "demo-user").eq("exerciseName", args.name)
       )
       .first();
 
     if (!existingPR) {
       await ctx.db.insert("personalRecords", {
-        userId: ctx.user._id,
+        userId: "demo-user",
         exerciseName: args.name,
         maxWeight,
         maxReps,
@@ -94,7 +94,7 @@ export const update = authMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const exercise = await ctx.db.get(args.exerciseId);
-    if (!exercise || exercise.userId !== ctx.user._id) {
+    if (!exercise || exercise.userId !== "demo-user") {
       throw new Error("Exercise not found");
     }
 
@@ -112,7 +112,7 @@ export const remove = authMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const exercise = await ctx.db.get(args.exerciseId);
-    if (!exercise || exercise.userId !== ctx.user._id) {
+    if (!exercise || exercise.userId !== "demo-user") {
       throw new Error("Exercise not found");
     }
 
@@ -137,7 +137,7 @@ export const getPersonalRecords = authQuery({
   handler: async (ctx) => {
     const records = await ctx.db
       .query("personalRecords")
-      .withIndex("by_user_id", (q) => q.eq("userId", ctx.user._id))
+      .withIndex("by_user_id", (q) => q.eq("userId", "demo-user"))
       .collect();
     return records;
   },

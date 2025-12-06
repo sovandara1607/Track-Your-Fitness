@@ -16,9 +16,9 @@ export const list = authQuery({
     })
   ),
   handler: async (ctx) => {
+    // Demo mode: show all workouts (no user filtering)
     const workouts = await ctx.db
       .query("workouts")
-      .withIndex("by_user_id", (q) => q.eq("userId", ctx.user._id))
       .order("desc")
       .collect();
     return workouts;
@@ -42,7 +42,7 @@ export const getRecent = authQuery({
   handler: async (ctx, args) => {
     const workouts = await ctx.db
       .query("workouts")
-      .withIndex("by_user_id", (q) => q.eq("userId", ctx.user._id))
+      .withIndex("by_user_id", (q) => q.eq("userId", "demo-user"))
       .order("desc")
       .take(args.limit);
     return workouts;
@@ -66,7 +66,7 @@ export const getById = authQuery({
   ),
   handler: async (ctx, args) => {
     const workout = await ctx.db.get(args.workoutId);
-    if (!workout || workout.userId !== ctx.user._id) {
+    if (!workout || workout.userId !== "demo-user") {
       return null;
     }
     return workout;
@@ -83,7 +83,7 @@ export const create = authMutation({
   returns: v.id("workouts"),
   handler: async (ctx, args) => {
     const workoutId = await ctx.db.insert("workouts", {
-      userId: ctx.user._id,
+      userId: "demo-user",
       name: args.name,
       date: args.date,
       duration: args.duration,
@@ -105,7 +105,7 @@ export const update = authMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const workout = await ctx.db.get(args.workoutId);
-    if (!workout || workout.userId !== ctx.user._id) {
+    if (!workout) {
       throw new Error("Workout not found");
     }
 
@@ -125,7 +125,7 @@ export const remove = authMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const workout = await ctx.db.get(args.workoutId);
-    if (!workout || workout.userId !== ctx.user._id) {
+    if (!workout || workout.userId !== "demo-user") {
       throw new Error("Workout not found");
     }
 
@@ -155,7 +155,7 @@ export const getStats = authQuery({
   handler: async (ctx) => {
     const workouts = await ctx.db
       .query("workouts")
-      .withIndex("by_user_id", (q) => q.eq("userId", ctx.user._id))
+      .withIndex("by_user_id", (q) => q.eq("userId", "demo-user"))
       .collect();
 
     const completedWorkouts = workouts.filter((w) => w.completed);

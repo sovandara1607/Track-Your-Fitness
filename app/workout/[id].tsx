@@ -1,26 +1,26 @@
 
 
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Platform,
-  ActivityIndicator,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-import { colors, spacing, borderRadius, typography } from "@/constants/theme";
-import { Ionicons } from "@expo/vector-icons";
-import { ExerciseCard } from "@/components/ExerciseCard";
 import { Button } from "@/components/Button";
 import { EmptyState } from "@/components/EmptyState";
-import { router, useLocalSearchParams } from "expo-router";
+import { ExerciseCard } from "@/components/ExerciseCard";
+import { borderRadius, colors, spacing, typography } from "@/constants/theme";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import { Ionicons } from "@expo/vector-icons";
+import { useMutation, useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
+import { router, useLocalSearchParams } from "expo-router";
+import React from "react";
+import {
+    ActivityIndicator,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -55,8 +55,7 @@ export default function WorkoutDetailScreen() {
 
   const handleDeleteWorkout = async () => {
     if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedback
-Style.Heavy);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     }
     await deleteWorkout({ workoutId });
     router.back();
@@ -256,8 +255,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   title: {
-    ...typography.h
-1,
+    ...typography.h1,
     color: colors.text,
     flex: 1,
   },

@@ -20,7 +20,7 @@ export const list = authQuery({
   handler: async (ctx) => {
     const templates = await ctx.db
       .query("exerciseTemplates")
-      .withIndex("by_user_id", (q) => q.eq("userId", ctx.user._id))
+      .withIndex("by_user_id", (q) => q.eq("userId", "demo-user"))
       .collect();
     return templates;
   },
@@ -37,7 +37,7 @@ export const create = authMutation({
   returns: v.id("exerciseTemplates"),
   handler: async (ctx, args) => {
     const templateId = await ctx.db.insert("exerciseTemplates", {
-      userId: ctx.user._id,
+      userId: "demo-user",
       name: args.name,
       category: args.category,
       defaultSets: args.defaultSets,
@@ -54,7 +54,7 @@ export const seedDefaults = authMutation({
   handler: async (ctx) => {
     const existing = await ctx.db
       .query("exerciseTemplates")
-      .withIndex("by_user_id", (q) => q.eq("userId", ctx.user._id))
+      .withIndex("by_user_id", (q) => q.eq("userId", "demo-user"))
       .first();
 
     if (existing) return null;
@@ -78,7 +78,7 @@ export const seedDefaults = authMutation({
 
     for (const template of defaults) {
       await ctx.db.insert("exerciseTemplates", {
-        userId: ctx.user._id,
+        userId: "demo-user",
         ...template,
       });
     }
