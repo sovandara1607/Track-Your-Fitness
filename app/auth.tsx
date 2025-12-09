@@ -33,7 +33,7 @@ export default function AuthScreen() {
             <View style={styles.logoContainer}>
               <Ionicons name="fitness" size={64} color={colors.primary} />
             </View>
-            <Text style={styles.heroTitle}>FORGE</Text>
+            <Text style={styles.heroTitle}>LIFT</Text>
             <Text style={styles.heroSubtitle}>Build Your Strongest Self</Text>
           </View>
 
@@ -43,6 +43,7 @@ export default function AuthScreen() {
               <Ionicons name="information-circle-outline" size={24} color={colors.primary} />
               <Text style={styles.infoText}>
                 Authentication is coming soon. For now, you can explore the app in demo mode.
+                Because the developer is lazy and didn't want to set up backend services.
               </Text>
             </View>
 

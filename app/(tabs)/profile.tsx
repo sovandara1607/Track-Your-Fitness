@@ -27,8 +27,8 @@ export default function ProfileScreen() {
           <View style={styles.profileImageContainer}>
             <Ionicons name="person" size={48} color={colors.primary} />
           </View>
-          <Text style={styles.name}>Demo User</Text>
-          <Text style={styles.email}>demo@forge.app</Text>
+          <Text style={styles.name}>smos</Text>
+          <Text style={styles.email}>smos@lift.app</Text>
         </View>
 
         {/* Stats Overview */}
@@ -119,7 +119,7 @@ export default function ProfileScreen() {
 
         {/* Version Info */}
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>FORGE v1.0.0</Text>
+          <Text style={styles.versionText}>LIFT v1.0.0</Text>
           <Text style={styles.versionSubtext}>Demo Mode</Text>
         </View>
       </ScrollView>
