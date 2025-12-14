@@ -42,3 +42,41 @@ yarn-error.*
 *.lockb
 *.lock
 package-lock.json
+
+# Convex
+.convex/    
+.convexignore
+.env.convex
+.env.convex.local
+
+# Better Auth
+.better-auth/
+.better-authignore
+.env.better-auth
+.env.better-auth.local
+
+# Bun
+bun.lockb
+bun.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# VS Code
+.vscode/
+.cursor/
+.cursorrules
+.cursorignore
+
+# iOS
+ios/
+
+# Android
+android/
+
+# Windows
+windows/
+
+# Linux
+linux/
+

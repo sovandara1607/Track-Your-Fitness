@@ -11,13 +11,11 @@
     "dev": "bunx convex dev"
   },
   "dependencies": {
-    "@better-auth/expo": "^1.4.5",
-    "@convex-dev/better-auth": "^0.9.5",
+    "@better-auth/expo": "^1.4.7",
     "@expo/vector-icons": "^15.0.3",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
-    "better-auth": "^1.4.6",
     "convex": "^1.29.3",
     "convex-helpers": "^0.1.104",
     "expo": "^54.0.20",
