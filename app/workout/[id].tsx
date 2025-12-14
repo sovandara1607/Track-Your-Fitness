@@ -6,33 +6,36 @@ import { ExerciseCard } from "@/components/ExerciseCard";
 import { borderRadius, colors, spacing, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { useAuth } from "@/lib/auth-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
-    ActivityIndicator,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const workoutId = id as Id<"workouts">;
+  const { user } = useAuth();
 
-  const workout = useQuery(api.workouts.getById, { workoutId });
-  const exercises = useQuery(api.exercises.listByWorkout, { workoutId });
+  const workout = useQuery(api.workouts.getById, user ? { userId: user.id, workoutId } : "skip");
+  const exercises = useQuery(api.exercises.listByWorkout, user ? { userId: user.id, workoutId } : "skip");
   const updateWorkout = useMutation(api.workouts.update);
   const updateExercise = useMutation(api.exercises.update);
   const deleteWorkout = useMutation(api.workouts.remove);
 
   const handleToggleSet = async (exerciseId: Id<"exercises">, setIndex: number) => {
+    if (!user) return;
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
@@ -43,21 +46,23 @@ export default function WorkoutDetailScreen() {
     const newSets = [...exercise.sets];
     newSets[setIndex] = { ...newSets[setIndex], completed: !newSets[setIndex].completed };
 
-    await updateExercise({ exerciseId, sets: newSets });
+    await updateExercise({ userId: user.id, exerciseId, sets: newSets });
   };
 
   const handleCompleteWorkout = async () => {
+    if (!user) return;
     if (Platform.OS !== "web") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-    await updateWorkout({ workoutId, completed: true });
+    await updateWorkout({ userId: user.id, workoutId, completed: true });
   };
 
   const handleDeleteWorkout = async () => {
+    if (!user) return;
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     }
-    await deleteWorkout({ workoutId });
+    await deleteWorkout({ userId: user.id, workoutId });
     router.back();
   };
 

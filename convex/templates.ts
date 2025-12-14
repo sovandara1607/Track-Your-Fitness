@@ -15,12 +15,12 @@ const templateValidator = v.object({
 });
 
 export const list = authQuery({
-  args: {},
+  args: { userId: v.string() },
   returns: v.array(templateValidator),
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     const templates = await ctx.db
       .query("exerciseTemplates")
-      .withIndex("by_user_id", (q) => q.eq("userId", "demo-user"))
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
       .collect();
     return templates;
   },
@@ -28,6 +28,7 @@ export const list = authQuery({
 
 export const create = authMutation({
   args: {
+    userId: v.string(),
     name: v.string(),
     category: v.string(),
     defaultSets: v.number(),
@@ -37,7 +38,7 @@ export const create = authMutation({
   returns: v.id("exerciseTemplates"),
   handler: async (ctx, args) => {
     const templateId = await ctx.db.insert("exerciseTemplates", {
-      userId: "demo-user",
+      userId: args.userId,
       name: args.name,
       category: args.category,
       defaultSets: args.defaultSets,
@@ -49,12 +50,12 @@ export const create = authMutation({
 });
 
 export const seedDefaults = authMutation({
-  args: {},
+  args: { userId: v.string() },
   returns: v.null(),
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("exerciseTemplates")
-      .withIndex("by_user_id", (q) => q.eq("userId", "demo-user"))
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
       .first();
 
     if (existing) return null;
@@ -78,7 +79,7 @@ export const seedDefaults = authMutation({
 
     for (const template of defaults) {
       await ctx.db.insert("exerciseTemplates", {
-        userId: "demo-user",
+        userId: args.userId,
         ...template,
       });
     }

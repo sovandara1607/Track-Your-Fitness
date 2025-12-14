@@ -2,21 +2,51 @@
 
 import { Button } from "@/components/Button";
 import { borderRadius, colors, spacing, typography } from "@/constants/theme";
+import { useAuth } from "@/lib/auth-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
+    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
+    TouchableOpacity,
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AuthScreen() {
   const router = useRouter();
+  const { signIn, signUp, loading } = useAuth();
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleAuth = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    const error = isLogin 
+      ? await signIn(email, password)
+      : await signUp(email, password);
+
+    if (error) {
+      Alert.alert("Error", error);
+    } else {
+      router.replace("/(tabs)");
+    }
+  };
+
+  const handleDemoMode = () => {
+    router.replace("/(tabs)");
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -37,21 +67,82 @@ export default function AuthScreen() {
             <Text style={styles.heroSubtitle}>Build Your Strongest Self</Text>
           </View>
 
+          {/* Auth Toggle */}
+          <View style={styles.toggleContainer}>
+            <TouchableOpacity
+              style={[styles.toggleButton, isLogin && styles.toggleButtonActive]}
+              onPress={() => setIsLogin(true)}
+            >
+              <Text style={[styles.toggleText, isLogin && styles.toggleTextActive]}>
+                Sign In
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.toggleButton, !isLogin && styles.toggleButtonActive]}
+              onPress={() => setIsLogin(false)}
+            >
+              <Text style={[styles.toggleText, !isLogin && styles.toggleTextActive]}>
+                Sign Up
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Auth Form */}
           <View style={styles.formSection}>
-            <View style={styles.infoBox}>
-              <Ionicons name="information-circle-outline" size={24} color={colors.primary} />
-              <Text style={styles.infoText}>
-                Authentication is coming soon. For now, you can explore the app in demo mode.
-                Because the developer is lazy and didn't want to set up backend services.
-              </Text>
+            <View style={styles.inputContainer}>
+              <Ionicons name="mail-outline" size={20} color={colors.textMuted} />
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor={colors.textMuted}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                editable={!loading}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor={colors.textMuted}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                editable={!loading}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons 
+                  name={showPassword ? "eye-outline" : "eye-off-outline"} 
+                  size={20} 
+                  color={colors.textMuted} 
+                />
+              </TouchableOpacity>
             </View>
 
             <Button
-              title="Enter Demo Mode"
-              onPress={() => router.replace("/(tabs)")}
-              loading={false}
+              title={isLogin ? "Sign In" : "Sign Up"}
+              onPress={handleAuth}
+              loading={loading}
               style={styles.primaryButton}
+            />
+
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <Button
+              title="Continue in Demo Mode"
+              onPress={handleDemoMode}
+              loading={false}
+              style={styles.demoButton}
+              variant="secondary"
             />
           </View>
         </ScrollView>
@@ -95,25 +186,66 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.sm,
   },
+  toggleContainer: {
+    flexDirection: "row",
+    backgroundColor: colors.surfaceLight,
+    borderRadius: borderRadius.lg,
+    padding: 4,
+    marginBottom: spacing.lg,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    alignItems: "center",
+    borderRadius: borderRadius.md,
+  },
+  toggleButtonActive: {
+    backgroundColor: colors.surface,
+  },
+  toggleText: {
+    ...typography.body,
+    color: colors.textMuted,
+    fontWeight: "500",
+  },
+  toggleTextActive: {
+    color: colors.text,
+  },
   formSection: {
     flex: 1,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  input: {
+    flex: 1,
+    ...typography.body,
+    color: colors.text,
   },
   primaryButton: {
     marginTop: spacing.sm,
   },
-  infoBox: {
+  demoButton: {
+    backgroundColor: colors.surfaceLight,
+  },
+  divider: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.primary + "15",
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
+    marginVertical: spacing.lg,
+    gap: spacing.md,
   },
-  infoText: {
+  dividerLine: {
     flex: 1,
-    ...typography.body,
-    color: colors.text,
-    lineHeight: 20,
+    height: 1,
+    backgroundColor: colors.surfaceLight,
+  },
+  dividerText: {
+    ...typography.caption,
+    color: colors.textMuted,
   },
 });

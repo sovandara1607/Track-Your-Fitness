@@ -4,6 +4,7 @@ import { WorkoutCard } from "@/components/WorkoutCard";
 import { borderRadius, colors, spacing, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
 import { Doc } from "@/convex/_generated/dataModel";
+import { useAuth } from "@/lib/auth-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
@@ -20,7 +21,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function WorkoutsScreen() {
-  const workouts = useQuery(api.workouts.list);
+  const { user } = useAuth();
+  const workouts = useQuery(api.workouts.list, user ? { userId: user.id } : "skip");
 
   const handleNewWorkout = () => {
     if (Platform.OS !== "web") {

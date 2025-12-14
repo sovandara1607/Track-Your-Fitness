@@ -1,5 +1,6 @@
 import { borderRadius, colors, spacing, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
+import { useAuth } from "@/lib/auth-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
 import React from "react";
@@ -13,8 +14,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
-  const stats = useQuery(api.workouts.getStats);
-  const recentWorkouts = useQuery(api.workouts.getRecent, { limit: 5 });
+  const { user } = useAuth();
+  const stats = useQuery(api.workouts.getStats, user ? { userId: user.id } : "skip");
+  const recentWorkouts = useQuery(api.workouts.getRecent, user ? { userId: user.id, limit: 5 } : "skip");
 
   return (
     <SafeAreaView style={styles.container}>

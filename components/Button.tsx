@@ -1,17 +1,17 @@
 
 
+import { borderRadius, colors, spacing } from "@/constants/theme";
+import * as Haptics from "expo-haptics";
 import React from "react";
 import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
   ActivityIndicator,
   Platform,
-  ViewStyle,
+  StyleSheet,
+  Text,
   TextStyle,
+  TouchableOpacity,
+  ViewStyle,
 } from "react-native";
-import { colors, spacing, borderRadius, typography } from "@/constants/theme";
-import * as Haptics from "expo-haptics";
 
 interface ButtonProps {
   title: string;

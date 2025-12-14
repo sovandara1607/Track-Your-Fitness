@@ -1,5 +1,8 @@
 
 
+// Custom auth configuration
+// Using Convex mutations for authentication instead of Better Auth component
+
 export default {
     providers: [
         {

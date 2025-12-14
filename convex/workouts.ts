@@ -2,31 +2,7 @@ import { v } from "convex/values";
 import { authMutation, authQuery } from "./functions";
 
 export const list = authQuery({
-  args: {},
-  returns: v.array(
-    v.object({
-      _id: v.id("workouts"),
-      _creationTime: v.number(),
-      userId: v.string(),
-      name: v.string(),
-      date: v.number(),
-      duration: v.number(),
-      notes: v.optional(v.string()),
-      completed: v.boolean(),
-    })
-  ),
-  handler: async (ctx) => {
-    // Demo mode: show all workouts (no user filtering)
-    const workouts = await ctx.db
-      .query("workouts")
-      .order("desc")
-      .collect();
-    return workouts;
-  },
-});
-
-export const getRecent = authQuery({
-  args: { limit: v.number() },
+  args: { userId: v.string() },
   returns: v.array(
     v.object({
       _id: v.id("workouts"),
@@ -42,7 +18,31 @@ export const getRecent = authQuery({
   handler: async (ctx, args) => {
     const workouts = await ctx.db
       .query("workouts")
-      .withIndex("by_user_id", (q) => q.eq("userId", "demo-user"))
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .collect();
+    return workouts;
+  },
+});
+
+export const getRecent = authQuery({
+  args: { userId: v.string(), limit: v.number() },
+  returns: v.array(
+    v.object({
+      _id: v.id("workouts"),
+      _creationTime: v.number(),
+      userId: v.string(),
+      name: v.string(),
+      date: v.number(),
+      duration: v.number(),
+      notes: v.optional(v.string()),
+      completed: v.boolean(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const workouts = await ctx.db
+      .query("workouts")
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
       .order("desc")
       .take(args.limit);
     return workouts;
@@ -50,7 +50,7 @@ export const getRecent = authQuery({
 });
 
 export const getById = authQuery({
-  args: { workoutId: v.id("workouts") },
+  args: { userId: v.string(), workoutId: v.id("workouts") },
   returns: v.union(
     v.object({
       _id: v.id("workouts"),
@@ -66,7 +66,7 @@ export const getById = authQuery({
   ),
   handler: async (ctx, args) => {
     const workout = await ctx.db.get(args.workoutId);
-    if (!workout || workout.userId !== "demo-user") {
+    if (!workout || workout.userId !== args.userId) {
       return null;
     }
     return workout;
@@ -75,6 +75,7 @@ export const getById = authQuery({
 
 export const create = authMutation({
   args: {
+    userId: v.string(),
     name: v.string(),
     date: v.number(),
     duration: v.number(),
@@ -83,7 +84,7 @@ export const create = authMutation({
   returns: v.id("workouts"),
   handler: async (ctx, args) => {
     const workoutId = await ctx.db.insert("workouts", {
-      userId: "demo-user",
+      userId: args.userId,
       name: args.name,
       date: args.date,
       duration: args.duration,
@@ -96,6 +97,7 @@ export const create = authMutation({
 
 export const update = authMutation({
   args: {
+    userId: v.string(),
     workoutId: v.id("workouts"),
     name: v.optional(v.string()),
     duration: v.optional(v.number()),
@@ -105,7 +107,7 @@ export const update = authMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const workout = await ctx.db.get(args.workoutId);
-    if (!workout) {
+    if (!workout || workout.userId !== args.userId) {
       throw new Error("Workout not found");
     }
 
@@ -121,11 +123,11 @@ export const update = authMutation({
 });
 
 export const remove = authMutation({
-  args: { workoutId: v.id("workouts") },
+  args: { userId: v.string(), workoutId: v.id("workouts") },
   returns: v.null(),
   handler: async (ctx, args) => {
     const workout = await ctx.db.get(args.workoutId);
-    if (!workout || workout.userId !== "demo-user") {
+    if (!workout || workout.userId !== args.userId) {
       throw new Error("Workout not found");
     }
 
@@ -145,17 +147,17 @@ export const remove = authMutation({
 });
 
 export const getStats = authQuery({
-  args: {},
+  args: { userId: v.string() },
   returns: v.object({
     totalWorkouts: v.number(),
     totalMinutes: v.number(),
     thisWeekWorkouts: v.number(),
     currentStreak: v.number(),
   }),
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     const workouts = await ctx.db
       .query("workouts")
-      .withIndex("by_user_id", (q) => q.eq("userId", "demo-user"))
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
       .collect();
 
     const completedWorkouts = workouts.filter((w) => w.completed);

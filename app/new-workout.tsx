@@ -4,20 +4,21 @@ import { Button } from "@/components/Button";
 import { ExerciseCard } from "@/components/ExerciseCard";
 import { borderRadius, colors, getCategoryColor, spacing, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
+import { useAuth } from "@/lib/auth-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -34,7 +35,8 @@ export default function NewWorkoutScreen() {
   const [loading, setLoading] = useState(false);
   const [startTime] = useState(Date.now());
 
-  const templates = useQuery(api.templates.list);
+  const { user } = useAuth();
+  const templates = useQuery(api.templates.list, user ? { userId: user.id } : "skip");
   const createWorkout = useMutation(api.workouts.create);
   const createExercise = useMutation(api.exercises.create);
   const updateWorkout = useMutation(api.workouts.update);
@@ -82,7 +84,7 @@ export default function NewWorkoutScreen() {
   };
 
   const handleSaveWorkout = async () => {
-    if (!workoutName.trim()) {
+    if (!workoutName.trim() || !user) {
       return;
     }
 
@@ -91,6 +93,7 @@ export default function NewWorkoutScreen() {
     try {
       const duration = Math.round((Date.now() - startTime) / 60000);
       const workoutId = await createWorkout({
+        userId: user.id,
         name: workoutName,
         date: Date.now(),
         duration: Math.max(duration, 1),
@@ -99,6 +102,7 @@ export default function NewWorkoutScreen() {
       // Create exercises
       for (let i = 0; i < exercises.length; i++) {
         await createExercise({
+          userId: user.id,
           workoutId,
           name: exercises[i].name,
           sets: exercises[i].sets,
@@ -109,7 +113,7 @@ export default function NewWorkoutScreen() {
       // Mark as completed if all sets are done
       const allCompleted = exercises.every((e) => e.sets.every((s) => s.completed));
       if (allCompleted && exercises.length > 0) {
-        await updateWorkout({ workoutId, completed: true });
+        await updateWorkout({ userId: user.id, workoutId, completed: true });
       }
 
       if (Platform.OS !== "web") {

@@ -18,7 +18,7 @@ const exerciseValidator = v.object({
 });
 
 export const listByWorkout = authQuery({
-  args: { workoutId: v.id("workouts") },
+  args: { userId: v.string(), workoutId: v.id("workouts") },
   returns: v.array(exerciseValidator),
   handler: async (ctx, args) => {
     const exercises = await ctx.db
@@ -27,13 +27,14 @@ export const listByWorkout = authQuery({
       .collect();
 
     return exercises
-      .filter((e) => e.userId === "demo-user")
+      .filter((e) => e.userId === args.userId)
       .sort((a, b) => a.order - b.order);
   },
 });
 
 export const create = authMutation({
   args: {
+    userId: v.string(),
     workoutId: v.id("workouts"),
     name: v.string(),
     sets: v.array(setValidator),
@@ -42,13 +43,13 @@ export const create = authMutation({
   returns: v.id("exercises"),
   handler: async (ctx, args) => {
     const workout = await ctx.db.get(args.workoutId);
-    if (!workout || workout.userId !== "demo-user") {
+    if (!workout || workout.userId !== args.userId) {
       throw new Error("Workout not found");
     }
 
     const exerciseId = await ctx.db.insert("exercises", {
       workoutId: args.workoutId,
-      userId: "demo-user",
+      userId: args.userId,
       name: args.name,
       sets: args.sets,
       order: args.order,
@@ -61,13 +62,13 @@ export const create = authMutation({
     const existingPR = await ctx.db
       .query("personalRecords")
       .withIndex("by_user_id_and_exercise", (q) =>
-        q.eq("userId", "demo-user").eq("exerciseName", args.name)
+        q.eq("userId", args.userId).eq("exerciseName", args.name)
       )
       .first();
 
     if (!existingPR) {
       await ctx.db.insert("personalRecords", {
-        userId: "demo-user",
+        userId: args.userId,
         exerciseName: args.name,
         maxWeight,
         maxReps,
@@ -87,6 +88,7 @@ export const create = authMutation({
 
 export const update = authMutation({
   args: {
+    userId: v.string(),
     exerciseId: v.id("exercises"),
     name: v.optional(v.string()),
     sets: v.optional(v.array(setValidator)),
@@ -94,7 +96,7 @@ export const update = authMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const exercise = await ctx.db.get(args.exerciseId);
-    if (!exercise || exercise.userId !== "demo-user") {
+    if (!exercise || exercise.userId !== args.userId) {
       throw new Error("Exercise not found");
     }
 
@@ -108,11 +110,11 @@ export const update = authMutation({
 });
 
 export const remove = authMutation({
-  args: { exerciseId: v.id("exercises") },
+  args: { userId: v.string(), exerciseId: v.id("exercises") },
   returns: v.null(),
   handler: async (ctx, args) => {
     const exercise = await ctx.db.get(args.exerciseId);
-    if (!exercise || exercise.userId !== "demo-user") {
+    if (!exercise || exercise.userId !== args.userId) {
       throw new Error("Exercise not found");
     }
 
@@ -122,7 +124,7 @@ export const remove = authMutation({
 });
 
 export const getPersonalRecords = authQuery({
-  args: {},
+  args: { userId: v.string() },
   returns: v.array(
     v.object({
       _id: v.id("personalRecords"),
@@ -134,10 +136,10 @@ export const getPersonalRecords = authQuery({
       date: v.number(),
     })
   ),
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     const records = await ctx.db
       .query("personalRecords")
-      .withIndex("by_user_id", (q) => q.eq("userId", "demo-user"))
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
       .collect();
     return records;
   },

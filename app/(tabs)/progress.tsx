@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { StatCard } from "@/components/StatCard";
 import { borderRadius, colors, spacing, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
+import { useAuth } from "@/lib/auth-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
 import React from "react";
@@ -19,9 +20,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const { width } = Dimensions.get("window");
 
 export default function ProgressScreen() {
-  const stats = useQuery(api.workouts.getStats);
-  const personalRecords = useQuery(api.exercises.getPersonalRecords);
-  const workouts = useQuery(api.workouts.list);
+  const { user } = useAuth();
+  const stats = useQuery(api.workouts.getStats, user ? { userId: user.id } : "skip");
+  const personalRecords = useQuery(api.exercises.getPersonalRecords, user ? { userId: user.id } : "skip");
+  const workouts = useQuery(api.workouts.list, user ? { userId: user.id } : "skip");
 
   // Calculate weekly activity
   const weeklyActivity = React.useMemo(() => {

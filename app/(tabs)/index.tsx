@@ -3,6 +3,7 @@
 import { Button } from "@/components/Button";
 import { borderRadius, colors, spacing, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
+import { useAuth } from "@/lib/auth-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
 import { useRouter } from "expo-router";
@@ -18,8 +19,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const recentWorkouts = useQuery(api.workouts.getRecent, { limit: 3 });
-  const stats = useQuery(api.workouts.getStats);
+  const { user } = useAuth();
+  const recentWorkouts = useQuery(api.workouts.getRecent, user ? { userId: user.id, limit: 3 } : "skip");
+  const stats = useQuery(api.workouts.getStats, user ? { userId: user.id } : "skip");
 
   return (
     <SafeAreaView style={styles.container}>
