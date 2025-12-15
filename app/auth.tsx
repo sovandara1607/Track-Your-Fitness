@@ -138,7 +138,7 @@ export default function AuthScreen() {
             </View>
 
             <Button
-              title="Continue in Demo Mode"
+              title="Start in Demo Mode"
               onPress={handleDemoMode}
               loading={false}
               style={styles.demoButton}

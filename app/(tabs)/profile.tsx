@@ -3,8 +3,10 @@ import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/lib/auth-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
+import { router } from "expo-router";
 import React from "react";
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,9 +16,38 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const stats = useQuery(api.workouts.getStats, user ? { userId: user.id } : "skip");
   const recentWorkouts = useQuery(api.workouts.getRecent, user ? { userId: user.id, limit: 5 } : "skip");
+
+  const handleSignOut = async () => {
+    Alert.alert(
+      "Sign Out",
+      "Are you sure you want to sign out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Sign Out",
+          style: "destructive",
+          onPress: async () => {
+            await signOut();
+            router.replace("/");
+          },
+        },
+      ]
+    );
+  };
+
+  const handleMenuItemPress = (item: string) => {
+    Alert.alert(
+      item,
+      `The ${item} feature is coming soon!`,
+      [{ text: "OK" }]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -29,8 +60,8 @@ export default function ProfileScreen() {
           <View style={styles.profileImageContainer}>
             <Ionicons name="person" size={48} color={colors.primary} />
           </View>
-          <Text style={styles.name}>smos</Text>
-          <Text style={styles.email}>smos@lift.app</Text>
+          <Text style={styles.name}>{user?.name || "User"}</Text>
+          <Text style={styles.email}>{user?.email || ""}</Text>
         </View>
 
         {/* Stats Overview */}
@@ -66,7 +97,10 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
           
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => handleMenuItemPress("Notifications")}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="notifications" size={24} color={colors.text} />
               <Text style={styles.menuItemText}>Notifications</Text>
@@ -74,7 +108,10 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => handleMenuItemPress("Theme")}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="color-palette" size={24} color={colors.text} />
               <Text style={styles.menuItemText}>Theme</Text>
@@ -82,7 +119,10 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => handleMenuItemPress("Preferences")}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="settings" size={24} color={colors.text} />
               <Text style={styles.menuItemText}>Preferences</Text>
@@ -90,7 +130,10 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => handleMenuItemPress("Help & Support")}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="help-circle" size={24} color={colors.text} />
               <Text style={styles.menuItemText}>Help & Support</Text>
@@ -98,7 +141,10 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => handleMenuItemPress("About")}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="information-circle" size={24} color={colors.text} />
               <Text style={styles.menuItemText}>About</Text>
@@ -109,7 +155,10 @@ export default function ProfileScreen() {
 
         {/* Account Actions */}
         <View style={styles.section}>
-          <TouchableOpacity style={[styles.menuItem, styles.dangerItem]}>
+          <TouchableOpacity 
+            style={[styles.menuItem, styles.dangerItem]}
+            onPress={handleSignOut}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="log-out" size={24} color={colors.error} />
               <Text style={[styles.menuItemText, styles.dangerText]}>
@@ -122,7 +171,6 @@ export default function ProfileScreen() {
         {/* Version Info */}
         <View style={styles.versionContainer}>
           <Text style={styles.versionText}>LIFT v1.0.0</Text>
-          <Text style={styles.versionSubtext}>Demo Mode</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

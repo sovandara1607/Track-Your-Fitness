@@ -8,7 +8,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "dev": "bunx convex dev"
+    "dev": "bunx convex dev",
+    "convex:dev": "npx convex dev"
   },
   "dependencies": {
     "@better-auth/expo": "^1.4.7",
