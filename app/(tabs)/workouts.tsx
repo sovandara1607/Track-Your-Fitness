@@ -28,7 +28,7 @@ export default function WorkoutsScreen() {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    router.push("/new-workout" as any);
+    router.push("/new-workout");
   };
 
   // Group workouts by month
@@ -89,7 +89,7 @@ export default function WorkoutsScreen() {
                   date={workout.date}
                   duration={workout.duration}
                   completed={workout.completed}
-                  onPress={() => router.push(`/workout/${workout._id}` as any)}
+                  onPress={() => router.push(`/workout/${workout._id}`)}
                 />
               ))}
             </View>
