@@ -1,6 +1,5 @@
-
-
 import { borderRadius, colors, spacing } from "@/constants/theme";
+import { useSettings } from "@/lib/settings-context";
 import * as Haptics from "expo-haptics";
 import React from "react";
 import {
@@ -34,6 +33,8 @@ export function Button({
   icon,
   style,
 }: ButtonProps) {
+  const { accentColor } = useSettings();
+
   const handlePress = () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -41,10 +42,33 @@ export function Button({
     onPress();
   };
 
+  // Dynamic styles based on accent color
+  const getContainerStyle = (): ViewStyle => {
+    switch (variant) {
+      case "primary":
+        return { backgroundColor: accentColor };
+      case "outline":
+        return { borderColor: accentColor };
+      default:
+        return {};
+    }
+  };
+
+  const getTextStyle = (): TextStyle => {
+    switch (variant) {
+      case "outline":
+      case "ghost":
+        return { color: accentColor };
+      default:
+        return {};
+    }
+  };
+
   const containerStyles: ViewStyle[] = [
     styles.container,
     styles[`container_${variant}`],
     styles[`container_${size}`],
+    getContainerStyle(),
     disabled && styles.disabled,
     style,
   ].filter(Boolean) as ViewStyle[];
@@ -53,6 +77,7 @@ export function Button({
     styles.text,
     styles[`text_${variant}`],
     styles[`text_${size}`],
+    getTextStyle(),
   ].filter(Boolean) as TextStyle[];
 
   return (
@@ -64,12 +89,12 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" ? colors.text : colors.primary}
+          color={variant === "primary" ? colors.text : accentColor}
           size="small"
         />
       ) : (
         <>
-          {icon}
+          {typeof icon === "string" ? <Text>{icon}</Text> : icon}
           <Text style={textStyles}>{title}</Text>
         </>
       )}
@@ -92,8 +117,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   container_outline: {
-    backgroundColor: "transparent"
-,
+    backgroundColor: "transparent",
     borderWidth: 2,
     borderColor: colors.primary,
   },
@@ -140,4 +164,3 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
 });
-

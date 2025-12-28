@@ -1,10 +1,14 @@
-import { borderRadius, colors, spacing, typography } from "@/constants/theme";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { borderRadius, spacing, colors as staticColors, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/lib/auth-context";
+import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
+import { router } from "expo-router";
 import React from "react";
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,94 +18,136 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const { colors, accentColor } = useSettings();
   const stats = useQuery(api.workouts.getStats, user ? { userId: user.id } : "skip");
   const recentWorkouts = useQuery(api.workouts.getRecent, user ? { userId: user.id, limit: 5 } : "skip");
 
+  const handleSignOut = async () => {
+    Alert.alert(
+      "Sign Out",
+      "Are you sure you want to sign out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Sign Out",
+          style: "destructive",
+          onPress: async () => {
+            await signOut();
+            router.replace("/auth");
+          },
+        },
+      ]
+    );
+  };
+
+  const handleNavigate = (route: "/settings/notifications" | "/settings/theme" | "/settings/preferences" | "/settings/help" | "/settings/about") => {
+    router.push(route);
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <AnimatedBackground />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.profileImageContainer}>
-            <Ionicons name="person" size={48} color={colors.primary} />
+          <View style={[styles.profileImageContainer, { backgroundColor: colors.surface }]}>
+            <Ionicons name="person" size={48} color={accentColor} />
           </View>
-          <Text style={styles.name}>smos</Text>
-          <Text style={styles.email}>smos@lift.app</Text>
+          <Text style={[styles.name, { color: colors.text }]}>{user?.name || "User"}</Text>
+          <Text style={[styles.email, { color: colors.textSecondary }]}>{user?.email || ""}</Text>
         </View>
 
         {/* Stats Overview */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your Stats</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Stats</Text>
           <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Ionicons name="barbell" size={32} color={colors.primary} />
-              <Text style={styles.statValue}>{stats?.totalWorkouts ?? 0}</Text>
-              <Text style={styles.statLabel}>Total Workouts</Text>
+            <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+              <Ionicons name="barbell" size={32} color={accentColor} />
+              <Text style={[styles.statValue, { color: colors.text }]}>{stats?.totalWorkouts ?? 0}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Workouts</Text>
             </View>
-            <View style={styles.statCard}>
-              <Ionicons name="time" size={32} color={colors.primary} />
-              <Text style={styles.statValue}>{stats?.totalMinutes ?? 0}</Text>
-              <Text style={styles.statLabel}>Total Minutes</Text>
+            <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+              <Ionicons name="time" size={32} color={accentColor} />
+              <Text style={[styles.statValue, { color: colors.text }]}>{stats?.totalMinutes ?? 0}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Minutes</Text>
             </View>
-            <View style={styles.statCard}>
-              <Ionicons name="flame" size={32} color={colors.primary} />
-              <Text style={styles.statValue}>{stats?.currentStreak ?? 0}</Text>
-              <Text style={styles.statLabel}>Day Streak</Text>
+            <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+              <Ionicons name="flame" size={32} color={accentColor} />
+              <Text style={[styles.statValue, { color: colors.text }]}>{stats?.currentStreak ?? 0}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Day Streak</Text>
             </View>
-            <View style={styles.statCard}>
-              <Ionicons name="trophy" size={32} color={colors.primary} />
-              <Text style={styles.statValue}>
+            <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+              <Ionicons name="trophy" size={32} color={accentColor} />
+              <Text style={[styles.statValue, { color: colors.text }]}>
                 {recentWorkouts?.filter((w) => w.completed).length ?? 0}
               </Text>
-              <Text style={styles.statLabel}>Completed</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Completed</Text>
             </View>
           </View>
         </View>
 
         {/* Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Settings</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Settings</Text>
           
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={[styles.menuItem, { backgroundColor: colors.surface }]}
+            onPress={() => handleNavigate("/settings/notifications")}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="notifications" size={24} color={colors.text} />
-              <Text style={styles.menuItemText}>Notifications</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Notifications</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={[styles.menuItem, { backgroundColor: colors.surface }]}
+            onPress={() => handleNavigate("/settings/theme")}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="color-palette" size={24} color={colors.text} />
-              <Text style={styles.menuItemText}>Theme</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Theme</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={[styles.menuItem, { backgroundColor: colors.surface }]}
+            onPress={() => handleNavigate("/settings/preferences")}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="settings" size={24} color={colors.text} />
-              <Text style={styles.menuItemText}>Preferences</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Preferences</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={[styles.menuItem, { backgroundColor: colors.surface }]}
+            onPress={() => handleNavigate("/settings/help")}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="help-circle" size={24} color={colors.text} />
-              <Text style={styles.menuItemText}>Help & Support</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Help & Support</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity 
+            style={[styles.menuItem, { backgroundColor: colors.surface }]}
+            onPress={() => handleNavigate("/settings/about")}
+          >
             <View style={styles.menuItemLeft}>
               <Ionicons name="information-circle" size={24} color={colors.text} />
-              <Text style={styles.menuItemText}>About</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>About</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
@@ -109,9 +155,12 @@ export default function ProfileScreen() {
 
         {/* Account Actions */}
         <View style={styles.section}>
-          <TouchableOpacity style={[styles.menuItem, styles.dangerItem]}>
+          <TouchableOpacity 
+            style={[styles.menuItem, styles.dangerItem]}
+            onPress={handleSignOut}
+          >
             <View style={styles.menuItemLeft}>
-              <Ionicons name="log-out" size={24} color={colors.error} />
+              <Ionicons name="log-out" size={24} color={staticColors.error} />
               <Text style={[styles.menuItemText, styles.dangerText]}>
                 Sign Out
               </Text>
@@ -121,8 +170,7 @@ export default function ProfileScreen() {
 
         {/* Version Info */}
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>LIFT v1.0.0</Text>
-          <Text style={styles.versionSubtext}>Demo Mode</Text>
+          <Text style={[styles.versionText, { color: colors.textMuted }]}>LIFT v1.0.0</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -132,7 +180,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     padding: spacing.lg,
@@ -145,26 +192,22 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.md,
   },
   name: {
     ...typography.h2,
-    color: colors.text,
     marginBottom: spacing.xs,
   },
   email: {
     ...typography.body,
-    color: colors.textSecondary,
   },
   section: {
     marginBottom: spacing.xl,
   },
   sectionTitle: {
     ...typography.h3,
-    color: colors.text,
     marginBottom: spacing.md,
   },
   statsGrid: {
@@ -175,7 +218,6 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     minWidth: "45%",
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     alignItems: "center",
@@ -183,18 +225,15 @@ const styles = StyleSheet.create({
   },
   statValue: {
     ...typography.h2,
-    color: colors.text,
   },
   statLabel: {
     ...typography.caption,
-    color: colors.textSecondary,
     textAlign: "center",
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.sm,
@@ -206,14 +245,13 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     ...typography.body,
-    color: colors.text,
     fontWeight: "500",
   },
   dangerItem: {
-    backgroundColor: colors.error + "15",
+    backgroundColor: staticColors.error + "15",
   },
   dangerText: {
-    color: colors.error,
+    color: staticColors.error,
   },
   versionContainer: {
     alignItems: "center",
@@ -221,12 +259,10 @@ const styles = StyleSheet.create({
   },
   versionText: {
     ...typography.caption,
-    color: colors.textMuted,
     fontWeight: "600",
   },
   versionSubtext: {
     ...typography.caption,
-    color: colors.textMuted,
     marginTop: spacing.xs,
   },
 });

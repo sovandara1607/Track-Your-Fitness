@@ -1,7 +1,8 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { colors, spacing, borderRadius, typography } from "@/constants/theme";
+import { borderRadius, spacing, typography } from "@/constants/theme";
+import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 interface StatCardProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -10,14 +11,17 @@ interface StatCardProps {
   color?: string;
 }
 
-export function StatCard({ icon, value, label, color = colors.primary }: StatCardProps) {
+export function StatCard({ icon, value, label, color }: StatCardProps) {
+  const { colors, accentColor } = useSettings();
+  const iconColor = color || accentColor;
+  
   return (
-    <View style={styles.container}>
-      <View style={[styles.iconContainer, { backgroundColor: color + "20" }]}>
-        <Ionicons name={icon} size={24} color={color} />
+    <View style={[styles.container, { backgroundColor: colors.surface }]}>
+      <View style={[styles.iconContainer, { backgroundColor: iconColor + "20" }]}>
+        <Ionicons name={icon} size={24} color={iconColor} />
       </View>
-      <Text style={styles.value}>{value}</Text>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.value, { color: colors.text }]}>{value}</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>{label}</Text>
     </View>
   );
 }
@@ -25,7 +29,6 @@ export function StatCard({ icon, value, label, color = colors.primary }: StatCar
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     alignItems: "center",
@@ -41,12 +44,10 @@ const styles = StyleSheet.create({
   },
   value: {
     ...typography.h2,
-    color: colors.text,
     marginBottom: spacing.xs,
   },
   label: {
     ...typography.caption,
-    color: colors.textSecondary,
     textAlign: "center",
   },
 });

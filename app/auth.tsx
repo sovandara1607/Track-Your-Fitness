@@ -1,8 +1,10 @@
 
 
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { Button } from "@/components/Button";
-import { borderRadius, colors, spacing, typography } from "@/constants/theme";
+import { borderRadius, spacing, typography } from "@/constants/theme";
 import { useAuth } from "@/lib/auth-context";
+import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -22,6 +24,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function AuthScreen() {
   const router = useRouter();
   const { signIn, signUp, loading } = useAuth();
+  const { colors, accentColor } = useSettings();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,7 +52,8 @@ export default function AuthScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <AnimatedBackground />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -60,28 +64,28 @@ export default function AuthScreen() {
         >
           {/* Hero Section */}
           <View style={styles.heroSection}>
-            <View style={styles.logoContainer}>
-              <Ionicons name="fitness" size={64} color={colors.primary} />
+            <View style={[styles.logoContainer, { backgroundColor: accentColor + "20" }]}>
+              <Ionicons name="fitness" size={64} color={accentColor} />
             </View>
-            <Text style={styles.heroTitle}>LIFT</Text>
-            <Text style={styles.heroSubtitle}>Build Your Strongest Self</Text>
+            <Text style={[styles.heroTitle, { color: colors.text }]}>LIFT</Text>
+            <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>Build Your Strongest Self</Text>
           </View>
 
           {/* Auth Toggle */}
-          <View style={styles.toggleContainer}>
+          <View style={[styles.toggleContainer, { backgroundColor: colors.surfaceLight }]}>
             <TouchableOpacity
-              style={[styles.toggleButton, isLogin && styles.toggleButtonActive]}
+              style={[styles.toggleButton, isLogin && [styles.toggleButtonActive, { backgroundColor: colors.surface }]]}
               onPress={() => setIsLogin(true)}
             >
-              <Text style={[styles.toggleText, isLogin && styles.toggleTextActive]}>
-                Sign In
+              <Text style={[styles.toggleText, { color: colors.textMuted }, isLogin && { color: colors.text }]}>
+                Log In
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.toggleButton, !isLogin && styles.toggleButtonActive]}
+              style={[styles.toggleButton, !isLogin && [styles.toggleButtonActive, { backgroundColor: colors.surface }]]}
               onPress={() => setIsLogin(false)}
             >
-              <Text style={[styles.toggleText, !isLogin && styles.toggleTextActive]}>
+              <Text style={[styles.toggleText, { color: colors.textMuted }, !isLogin && { color: colors.text }]}>
                 Sign Up
               </Text>
             </TouchableOpacity>
@@ -89,10 +93,10 @@ export default function AuthScreen() {
 
           {/* Auth Form */}
           <View style={styles.formSection}>
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
               <Ionicons name="mail-outline" size={20} color={colors.textMuted} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Email"
                 placeholderTextColor={colors.textMuted}
                 value={email}
@@ -103,10 +107,10 @@ export default function AuthScreen() {
               />
             </View>
 
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
               <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Password"
                 placeholderTextColor={colors.textMuted}
                 value={password}
@@ -132,13 +136,13 @@ export default function AuthScreen() {
             />
 
             <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.dividerLine} />
+              <View style={[styles.dividerLine, { backgroundColor: colors.surfaceLight }]} />
+              <Text style={[styles.dividerText, { color: colors.textMuted }]}>OR</Text>
+              <View style={[styles.dividerLine, { backgroundColor: colors.surfaceLight }]} />
             </View>
 
             <Button
-              title="Continue in Demo Mode"
+              title="Start in Demo Mode"
               onPress={handleDemoMode}
               loading={false}
               style={styles.demoButton}
@@ -154,7 +158,6 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   keyboardView: {
     flex: 1,
@@ -171,24 +174,20 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: borderRadius.xl,
-    backgroundColor: colors.primary + "20",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.lg,
   },
   heroTitle: {
     ...typography.hero,
-    color: colors.text,
     letterSpacing: 8,
   },
   heroSubtitle: {
     ...typography.body,
-    color: colors.textSecondary,
     marginTop: spacing.sm,
   },
   toggleContainer: {
     flexDirection: "row",
-    backgroundColor: colors.surfaceLight,
     borderRadius: borderRadius.lg,
     padding: 4,
     marginBottom: spacing.lg,
@@ -199,24 +198,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: borderRadius.md,
   },
-  toggleButtonActive: {
-    backgroundColor: colors.surface,
-  },
+  toggleButtonActive: {},
   toggleText: {
     ...typography.body,
-    color: colors.textMuted,
     fontWeight: "500",
   },
-  toggleTextActive: {
-    color: colors.text,
-  },
+  toggleTextActive: {},
   formSection: {
     flex: 1,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -225,14 +218,11 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     ...typography.body,
-    color: colors.text,
   },
   primaryButton: {
     marginTop: spacing.sm,
   },
-  demoButton: {
-    backgroundColor: colors.surfaceLight,
-  },
+  demoButton: {},
   divider: {
     flexDirection: "row",
     alignItems: "center",
@@ -242,10 +232,8 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.surfaceLight,
   },
   dividerText: {
     ...typography.caption,
-    color: colors.textMuted,
   },
 });
