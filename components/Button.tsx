@@ -1,5 +1,3 @@
-
-
 import { borderRadius, colors, spacing } from "@/constants/theme";
 import * as Haptics from "expo-haptics";
 import React from "react";
@@ -69,7 +67,7 @@ export function Button({
         />
       ) : (
         <>
-          {icon}
+          {typeof icon === "string" ? <Text>{icon}</Text> : icon}
           <Text style={textStyles}>{title}</Text>
         </>
       )}
@@ -92,8 +90,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   container_outline: {
-    backgroundColor: "transparent"
-,
+    backgroundColor: "transparent",
     borderWidth: 2,
     borderColor: colors.primary,
   },
@@ -140,4 +137,3 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
 });
-

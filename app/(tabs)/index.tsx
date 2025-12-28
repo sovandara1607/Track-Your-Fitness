@@ -1,5 +1,3 @@
-
-
 import { Button } from "@/components/Button";
 import { borderRadius, colors, spacing, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
@@ -13,15 +11,21 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const recentWorkouts = useQuery(api.workouts.getRecent, user ? { userId: user.id, limit: 3 } : "skip");
-  const stats = useQuery(api.workouts.getStats, user ? { userId: user.id } : "skip");
+  const recentWorkouts = useQuery(
+    api.workouts.getRecent,
+    user ? { userId: user.id, limit: 3 } : "skip",
+  );
+  const stats = useQuery(
+    api.workouts.getStats,
+    user ? { userId: user.id } : "skip",
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -32,7 +36,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Welcome Back! 💪</Text>
+            <Text style={styles.greeting}>Welcome Back! 💪 {user?.name}</Text>
             <Text style={styles.subtitle}>Ready to crush your workout?</Text>
           </View>
         </View>
@@ -62,7 +66,6 @@ export default function HomeScreen() {
             title="Start New Workout"
             onPress={() => router.push("/new-workout")}
             style={styles.primaryButton}
-            icon="add-circle"
           />
         </View>
 
@@ -81,7 +84,11 @@ export default function HomeScreen() {
             </View>
           ) : recentWorkouts.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="barbell-outline" size={48} color={colors.textMuted} />
+              <Ionicons
+                name="barbell-outline"
+                size={48}
+                color={colors.textMuted}
+              />
               <Text style={styles.emptyText}>No workouts yet</Text>
               <Text style={styles.emptySubtext}>
                 Start your first workout to see it here
@@ -103,7 +110,11 @@ export default function HomeScreen() {
                   <View style={styles.workoutCardHeader}>
                     <Text style={styles.workoutName}>{workout.name}</Text>
                     {workout.completed && (
-                      <Ionicons name="checkmark-circle" size={20} color={colors.success} />
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color={colors.success}
+                      />
                     )}
                   </View>
                   <Text style={styles.workoutDate}>
@@ -113,7 +124,11 @@ export default function HomeScreen() {
                     {workout.duration} minutes
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.textMuted}
+                />
               </TouchableOpacity>
             ))
           )}
