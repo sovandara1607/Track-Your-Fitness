@@ -1,12 +1,11 @@
-
-
 import { Button } from "@/components/Button";
 import { EmptyState } from "@/components/EmptyState";
 import { ExerciseCard } from "@/components/ExerciseCard";
-import { borderRadius, colors, spacing, typography } from "@/constants/theme";
+import { borderRadius, spacing, colors as staticColors, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/lib/auth-context";
+import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
@@ -27,6 +26,7 @@ export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const workoutId = id as Id<"workouts">;
   const { user } = useAuth();
+  const { accentColor, colors } = useSettings();
 
   const workout = useQuery(api.workouts.getById, user ? { userId: user.id, workoutId } : "skip");
   const exercises = useQuery(api.exercises.listByWorkout, user ? { userId: user.id, workoutId } : "skip");
@@ -68,9 +68,9 @@ export default function WorkoutDetailScreen() {
 
   if (workout === undefined || exercises === undefined) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={accentColor} />
         </View>
       </SafeAreaView>
     );
@@ -78,7 +78,7 @@ export default function WorkoutDetailScreen() {
 
   if (workout === null) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <EmptyState
           icon="alert-circle-outline"
           title="Workout Not Found"
@@ -97,14 +97,14 @@ export default function WorkoutDetailScreen() {
   const progress = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.surface }]}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleDeleteWorkout} style={styles.deleteButton}>
-          <Ionicons name="trash-outline" size={24} color={colors.error} />
+        <TouchableOpacity onPress={handleDeleteWorkout} style={[styles.deleteButton, { backgroundColor: staticColors.error + "20" }]}>
+          <Ionicons name="trash-outline" size={24} color={staticColors.error} />
         </TouchableOpacity>
       </View>
 
@@ -116,15 +116,15 @@ export default function WorkoutDetailScreen() {
         {/* Workout Info */}
         <View style={styles.infoSection}>
           <View style={styles.titleRow}>
-            <Text style={styles.title}>{workout.name}</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{workout.name}</Text>
             {workout.completed && (
-              <View style={styles.completedBadge}>
-                <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-                <Text style={styles.completedText}>Completed</Text>
+              <View style={[styles.completedBadge, { backgroundColor: staticColors.success + "20" }]}>
+                <Ionicons name="checkmark-circle" size={20} color={staticColors.success} />
+                <Text style={[styles.completedText, { color: staticColors.success }]}>Completed</Text>
               </View>
             )}
           </View>
-          <Text style={styles.date}>
+          <Text style={[styles.date, { color: colors.textSecondary }]}>
             {new Date(workout.date).toLocaleDateString("en-US", {
               weekday: "long",
               month: "long",
@@ -136,13 +136,13 @@ export default function WorkoutDetailScreen() {
           {/* Progress Bar */}
           <View style={styles.progressSection}>
             <View style={styles.progressHeader}>
-              <Text style={styles.progressLabel}>Progress</Text>
-              <Text style={styles.progressValue}>
+              <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>Progress</Text>
+              <Text style={[styles.progressValue, { color: colors.text }]}>
                 {completedSets}/{totalSets} sets
               </Text>
             </View>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${progress}%` }]} />
+            <View style={[styles.progressBar, { backgroundColor: colors.surface }]}>
+              <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: accentColor }]} />
             </View>
           </View>
 
@@ -150,32 +150,30 @@ export default function WorkoutDetailScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
-              <Text style={styles.statText}>{workout.duration} min</Text>
+              <Text style={[styles.statText, { color: colors.textSecondary }]}>{workout.duration} min</Text>
             </View>
             <View style={styles.statItem}>
               <Ionicons name="barbell-outline" size={20} color={colors.textSecondary} />
-              <Text style={styles.statText}>{exercises.length} exercises</Text>
+              <Text style={[styles.statText, { color: colors.textSecondary }]}>{exercises.length} exercises</Text>
             </View>
             <View style={styles.statItem}>
               <Ionicons name="layers-outline" size={20} color={colors.textSecondary} />
-              <Text style={styles.statText}>{totalSets} sets</Text>
+              <Text style={[styles.statText, { color: colors.textSecondary }]}>{totalSets} sets</Text>
             </View>
           </View>
         </View>
 
         {/* Exercises */}
         <View style={styles.exercisesSection}>
-          <Text style={styles.sectionTitle}>Exercises</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Exercises</Text>
           {exercises.length === 0 ? (
-            <View style={styles.emptyExercises}>
-              <Text style={styles.emptyText}>No exercises logged</Text>
+            <View style={[styles.emptyExercises, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>No exercises logged</Text>
             </View>
-     
-     ) : (
+          ) : (
             exercises.map((exercise) => (
               <ExerciseCard
-                key={exercise.
-_id}
+                key={exercise._id}
                 name={exercise.name}
                 sets={exercise.sets}
                 onToggleSet={(setIndex) => handleToggleSet(exercise._id, setIndex)}
@@ -187,9 +185,9 @@ _id}
         {/* Notes */}
         {workout.notes && (
           <View style={styles.notesSection}>
-            <Text style={styles.sectionTitle}>Notes</Text>
-            <View style={styles.notesCard}>
-              <Text style={styles.notesText}>{workout.notes}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Notes</Text>
+            <View style={[styles.notesCard, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.notesText, { color: colors.textSecondary }]}>{workout.notes}</Text>
             </View>
           </View>
         )}
@@ -197,11 +195,11 @@ _id}
 
       {/* Complete Button */}
       {!workout.completed && exercises.length > 0 && (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.surface }]}>
           <Button
             title="Complete Workout"
             onPress={handleCompleteWorkout}
-            icon={<Ionicons name="checkmark-circle" size={20} color={colors.text} />}
+            icon={<Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />}
             style={styles.completeButton}
           />
         </View>
@@ -213,7 +211,6 @@ _id}
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -231,7 +228,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -239,7 +235,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.error + "20",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -261,26 +256,22 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h1,
-    color: colors.text,
     flex: 1,
   },
   completedBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    backgroundColor: colors.success + "20",
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
   },
   completedText: {
     ...typography.small,
-    color: colors.success,
     fontWeight: "600",
   },
   date: {
     ...typography.body,
-    color: colors.textSecondary,
     marginBottom: spacing.lg,
   },
   progressSection: {
@@ -293,22 +284,18 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     ...typography.caption,
-    color: colors.textSecondary,
   },
   progressValue: {
     ...typography.caption,
-    color: colors.text,
     fontWeight: "600",
   },
   progressBar: {
     height: 8,
-    backgroundColor: colors.surface,
     borderRadius: 4,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: colors.primary,
     borderRadius: 4,
   },
   statsRow: {
@@ -322,37 +309,31 @@ const styles = StyleSheet.create({
   },
   statText: {
     ...typography.caption,
-    color: colors.textSecondary,
   },
   exercisesSection: {
     marginBottom: spacing.lg,
   },
   sectionTitle: {
     ...typography.h3,
-    color: colors.text,
     marginBottom: spacing.md,
   },
   emptyExercises: {
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     alignItems: "center",
   },
   emptyText: {
     ...typography.body,
-    color: colors.textMuted,
   },
   notesSection: {
     marginBottom: spacing.lg,
   },
   notesCard: {
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
   },
   notesText: {
     ...typography.body,
-    color: colors.textSecondary,
   },
   footer: {
     position: "absolute",
@@ -361,9 +342,7 @@ const styles = StyleSheet.create({
     right: 0,
     padding: spacing.lg,
     paddingBottom: Platform.OS === "ios" ? spacing.xl : spacing.lg,
-    backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: colors.surface,
   },
   completeButton: {
     width: "100%",

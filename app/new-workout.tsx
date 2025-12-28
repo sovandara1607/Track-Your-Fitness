@@ -2,9 +2,10 @@
 
 import { Button } from "@/components/Button";
 import { ExerciseCard } from "@/components/ExerciseCard";
-import { borderRadius, colors, getCategoryColor, spacing, typography } from "@/constants/theme";
+import { borderRadius, getCategoryColor, spacing, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/lib/auth-context";
+import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
@@ -36,10 +37,19 @@ export default function NewWorkoutScreen() {
   const [startTime] = useState(Date.now());
 
   const { user } = useAuth();
+  const { preferences, colors, accentColor } = useSettings();
   const templates = useQuery(api.templates.list, user ? { userId: user.id } : "skip");
   const createWorkout = useMutation(api.workouts.create);
   const createExercise = useMutation(api.exercises.create);
   const updateWorkout = useMutation(api.workouts.update);
+
+  // Convert weight for display
+  const displayWeight = (weightInLbs: number) => {
+    if (preferences.weightUnit === "kg") {
+      return Math.round(weightInLbs * 0.453592);
+    }
+    return weightInLbs;
+  };
 
   const handleAddExercise = (template: {
     name: string;
@@ -139,13 +149,13 @@ export default function NewWorkoutScreen() {
   }, [templates]);
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.surface }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="close" size={28} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Workout</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>New Workout</Text>
         <View style={{ width: 48 }} />
       </View>
 
@@ -157,14 +167,14 @@ export default function NewWorkoutScreen() {
         {/* Workout Name */}
         <View style={styles.nameSection}>
           <TextInput
-            style={styles.nameInput}
+            style={[styles.nameInput, { color: colors.text }]}
             placeholder="Workout Name"
             placeholderTextColor={colors.textMuted}
             value={workoutName}
             onChangeText={setWorkoutName}
             autoFocus
           />
-          <Text style={styles.dateText}>
+          <Text style={[styles.dateText, { color: colors.textSecondary }]}>
             {new Date().toLocaleDateString("en-US", {
               weekday: "long",
               month: "long",
@@ -191,23 +201,21 @@ export default function NewWorkoutScreen() {
 
         {/* Add Exercise Button */}
         <TouchableOpacity
-          style={styles.addExerciseButton}
+          style={[styles.addExerciseButton, { backgroundColor: colors.surface, borderColor: accentColor + "40" }]}
           onPress={() => setShowExercisePicker(true)}
           activeOpacity={0.8}
         >
-          <Ionicons name="add-circle" size={24} color={colors.primary} />
-          <Text style={styles.addExerciseText}>Add Exercise</Text>
+          <Ionicons name="add-circle" size={24} color={accentColor} />
+          <Text style={[styles.addExerciseText, { color: accentColor }]}>Add Exercise</Text>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Save Bu
-tton */}
-      <View style={styles.footer}>
+      {/* Save Button */}
+      <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.surface }]}>
         <Button
           title="Save Workout"
           onPress={handleSaveWorkout}
- 
-         loading={loading}
+          loading={loading}
           disabled={!workoutName.trim() || exercises.length === 0}
           style={styles.saveButton}
         />
@@ -220,9 +228,9 @@ tton */}
         presentationStyle="pageSheet"
         onRequestClose={() => setShowExercisePicker(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Add Exercise</Text>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Add Exercise</Text>
             <TouchableOpacity onPress={() => setShowExercisePicker(false)}>
               <Ionicons name="close" size={28} color={colors.text} />
             </TouchableOpacity>
@@ -238,25 +246,25 @@ tton */}
                       { backgroundColor: getCategoryColor(category) },
                     ]}
                   />
-                  <Text style={styles.categoryTitle}>
+                  <Text style={[styles.categoryTitle, { color: colors.text }]}>
                     {category.charAt(0).toUpperCase() + category.slice(1)}
                   </Text>
                 </View>
                 {categoryTemplates.map((template) => (
                   <TouchableOpacity
                     key={template._id}
-                    style={styles.templateItem}
+                    style={[styles.templateItem, { backgroundColor: colors.surface }]}
                     onPress={() => handleAddExercise(template)}
                     activeOpacity={0.7}
                   >
                     <View>
-                      <Text style={styles.templateName}>{template.name}</Text>
-                      <Text style={styles.templateDetails}>
+                      <Text style={[styles.templateName, { color: colors.text }]}>{template.name}</Text>
+                      <Text style={[styles.templateDetails, { color: colors.textSecondary }]}>
                         {template.defaultSets} sets × {template.defaultReps} reps
-                        {template.defaultWeight > 0 && ` @ ${template.defaultWeight} lbs`}
+                        {template.defaultWeight > 0 && ` @ ${displayWeight(template.defaultWeight)} ${preferences.weightUnit}`}
                       </Text>
                     </View>
-                    <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
+                    <Ionicons name="add-circle-outline" size={24} color={accentColor} />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -271,7 +279,6 @@ tton */}
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
@@ -280,7 +287,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.surface,
   },
   backButton: {
     width: 48,
@@ -290,7 +296,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.h3,
-    color: colors.text,
   },
   scrollView: {
     flex: 1,
@@ -304,12 +309,10 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     ...typography.h1,
-    color: colors.text,
     marginBottom: spacing.xs,
   },
   dateText: {
     ...typography.caption,
-    color: colors.textSecondary,
   },
   exercisesSection: {
     marginBottom: spacing.md,
@@ -319,16 +322,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.sm,
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     borderWidth: 2,
-    borderColor: colors.primary + "40",
     borderStyle: "dashed",
   },
   addExerciseText: {
     ...typography.body,
-    color: colors.primary,
     fontWeight: "600",
   },
   footer: {
@@ -338,16 +338,13 @@ const styles = StyleSheet.create({
     right: 0,
     padding: spacing.lg,
     paddingBottom: Platform.OS === "ios" ? spacing.xl : spacing.lg,
-    backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: colors.surface,
   },
   saveButton: {
     width: "100%",
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   modalHeader: {
     flexDirection: "row",
@@ -355,11 +352,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: colors.surface,
   },
   modalTitle: {
     ...typography.h2,
-    color: colors.text,
   },
   modalContent: {
     flex: 1,
@@ -381,26 +376,22 @@ const styles = StyleSheet.create({
   },
   categoryTitle: {
     ...typography.h3,
-    color: colors.text,
   },
   templateItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
   templateName: {
     ...typography.body,
-    color: colors.text,
     fontWeight: "600",
     marginBottom: spacing.xs,
   },
   templateDetails: {
     ...typography.caption,
-    color: colors.textSecondary,
   },
 });
 

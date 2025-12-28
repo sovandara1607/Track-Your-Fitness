@@ -1,16 +1,18 @@
-import { colors } from "@/constants/theme";
+import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
 import { Platform, StyleSheet } from "react-native";
 
 export default function TabLayout() {
+  const { accentColor, colors } = useSettings();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: colors.primary,
+        tabBarStyle: [styles.tabBar, { backgroundColor: colors.surface }],
+        tabBarActiveTintColor: accentColor,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarShowLabel: true,
         tabBarLabelStyle: styles.tabBarLabel,
@@ -58,7 +60,6 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: colors.surface,
     borderTopWidth: 0,
     height: Platform.OS === "ios" ? 88 : 70,
     paddingTop: 8,

@@ -1,9 +1,8 @@
-
-
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { colors, spacing, typography } from "@/constants/theme";
+import { spacing, typography } from "@/constants/theme";
+import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 interface EmptyStateProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -13,13 +12,15 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
+  const { colors } = useSettings();
+  
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
         <Ionicons name={icon} size={64} color={colors.textMuted} />
       </View>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.description}>{description}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+      <Text style={[styles.description, { color: colors.textSecondary }]}>{description}</Text>
       {action && <View style={styles.actionContainer}>{action}</View>}
     </View>
   );
@@ -38,13 +39,11 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h2,
-    color: colors.text,
     marginBottom: spacing.sm,
     textAlign: "center",
   },
   description: {
     ...typography.body,
-    color: colors.textSecondary,
     textAlign: "center",
     maxWidth: 280,
   },

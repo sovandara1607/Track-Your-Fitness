@@ -1,10 +1,9 @@
-
-
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
-import { colors, spacing, borderRadius, typography } from "@/constants/theme";
+import { borderRadius, spacing, colors as staticColors, typography } from "@/constants/theme";
+import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import React from "react";
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface WorkoutCardProps {
   name: string;
@@ -23,6 +22,7 @@ export function WorkoutCard({
   exerciseCount = 0,
   onPress,
 }: WorkoutCardProps) {
+  const { colors } = useSettings();
   const formattedDate = new Date(date).toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
@@ -38,7 +38,7 @@ export function WorkoutCard({
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.surface }]}
       onPress={handlePress}
       activeOpacity={0.8}
     >
@@ -46,27 +46,26 @@ export function WorkoutCard({
         <View
           style={[
             styles.statusIndicator,
-            { backgroundColor: completed ? colors.success : colors.warning },
+            { backgroundColor: completed ? staticColors.success : staticColors.warning },
           ]}
         />
         <View style={styles.content}>
-          <Text style={styles.name}>{name}</Text>
+          <Text style={[styles.name, { color: colors.text }]}>{name}</Text>
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
               <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
-              <Text style={styles.metaText}>{formattedDate}</Text>
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>{formattedDate}</Text>
             </View>
             <View style={styles.metaItem}>
               <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-              <Text style={styles.metaText}>{duration} min</Text>
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>{duration} min</Text>
             </View>
             {exerciseCount > 0 && (
               <View style={styles.metaItem}>
                 <Ionicons name="barbell-outline" size={14} color={colors.textSecondary} />
-                <Text style={styles.metaText}>{exerciseCount}</Text>
+                <Text style={[styles.metaText, { color: colors.textSecondary }]}>{exerciseCount}</Text>
               </View>
             )}
-
           </View>
         </View>
       </View>
@@ -77,7 +76,6 @@ export function WorkoutCard({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     flexDirection: "row",
@@ -101,7 +99,6 @@ const styles = StyleSheet.create({
   },
   name: {
     ...typography.h3,
-    color: colors.text,
     marginBottom: spacing.xs,
   },
   metaRow: {
@@ -116,7 +113,6 @@ const styles = StyleSheet.create({
   },
   metaText: {
     ...typography.caption,
-    color: colors.textSecondary,
   },
 });
 

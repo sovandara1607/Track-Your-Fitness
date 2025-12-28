@@ -2,9 +2,10 @@
 
 import { EmptyState } from "@/components/EmptyState";
 import { StatCard } from "@/components/StatCard";
-import { borderRadius, colors, spacing, typography } from "@/constants/theme";
+import { borderRadius, spacing, colors as staticColors, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/lib/auth-context";
+import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
 import React from "react";
@@ -21,9 +22,18 @@ const { width } = Dimensions.get("window");
 
 export default function ProgressScreen() {
   const { user } = useAuth();
+  const { preferences, accentColor, colors } = useSettings();
   const stats = useQuery(api.workouts.getStats, user ? { userId: user.id } : "skip");
   const personalRecords = useQuery(api.exercises.getPersonalRecords, user ? { userId: user.id } : "skip");
   const workouts = useQuery(api.workouts.list, user ? { userId: user.id } : "skip");
+
+  // Helper function to convert weight based on preference
+  const displayWeight = (weightInLbs: number) => {
+    if (preferences.weightUnit === "kg") {
+      return Math.round(weightInLbs * 0.453592);
+    }
+    return weightInLbs;
+  };
 
   // Calculate weekly activity
   const weeklyActivity = React.useMemo(() => {
@@ -47,7 +57,7 @@ export default function ProgressScreen() {
   const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -55,14 +65,14 @@ export default function ProgressScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Progress</Text>
-          <Text style={styles.subtitle}>Track your fitness journey</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Progress</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Track your fitness journey</Text>
         </View>
 
         {/* Weekly Activity */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week</Text>
-          <View style={styles.activityCard}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>This Week</Text>
+          <View style={[styles.activityCard, { backgroundColor: colors.surface }]}>
             <View style={styles.activityGrid}>
               {weeklyActivity.map((level, index) => (
                 <View key={index} style={styles.activityDay}>
@@ -75,14 +85,14 @@ export default function ProgressScreen() {
                           level === 0
                             ? colors.surfaceLight
                             : level === 1
-                            ? colors.primary + "60"
+                            ? accentColor + "60"
                             : level === 2
-                            ? colors.primary + "90"
-                            : colors.primary,
+                            ? accentColor + "90"
+                            : accentColor,
                       },
                     ]}
                   />
-                  <Text style={styles.activityLabel}>{dayLabels[index]}</Text>
+                  <Text style={[styles.activityLabel, { color: colors.textMuted }]}>{dayLabels[index]}</Text>
                 </View>
               ))}
             </View>
@@ -91,19 +101,19 @@ export default function ProgressScreen() {
 
         {/* Stats Overview */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Overview</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Overview</Text>
           <View style={styles.statsGrid}>
             <StatCard
               icon="flame"
               value={stats?.currentStreak ?? 0}
               label="Day Streak"
-              color={colors.secondary}
+              color={staticColors.secondary}
             />
             <StatCard
               icon="trophy"
               value={stats?.totalWorkouts ?? 0}
               label="Workouts"
-              color={colors.primary}
+              color={accentColor}
             />
           </View>
           <View style={styles.statsGrid}>
@@ -111,7 +121,7 @@ export default function ProgressScreen() {
               icon="time"
               value={Math.round((stats?.totalMinutes ?? 0) / 60)}
               label="Hours Trained"
-              color={colors.accent}
+              color={staticColors.accent}
             />
             <StatCard
               icon="calendar"
@@ -124,10 +134,10 @@ export default function ProgressScreen() {
 
         {/* Personal Records */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Records 🏆</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Personal Records 🏆</Text>
           {personalRecords === undefined ? (
             <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Loading...</Text>
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading...</Text>
             </View>
           ) : personalRecords.length === 0 ? (
             <EmptyState
@@ -138,22 +148,22 @@ export default function ProgressScreen() {
           ) : (
             <View style={styles.recordsGrid}>
               {personalRecords.slice(0, 6).map((record) => (
-                <View key={record._id} style={styles.recordCard}>
+                <View key={record._id} style={[styles.recordCard, { backgroundColor: colors.surface }]}>
                   <View style={styles.recordHeader}>
-                    <Ionicons name="medal" size={20} color={colors.secondary} />
-                    <Text style={styles.recordName} numberOfLines={1}>
+                    <Ionicons name="medal" size={20} color={staticColors.secondary} />
+                    <Text style={[styles.recordName, { color: colors.text }]} numberOfLines={1}>
                       {record.exerciseName}
                     </Text>
                   </View>
                   <View style={styles.recordStats}>
                     <View style={styles.recordStat}>
-                      <Text style={styles.recordValue}>{record.maxWeight}</Text>
-                      <Text style={styles.recordLabel}>lbs</Text>
+                      <Text style={[styles.recordValue, { color: colors.text }]}>{displayWeight(record.maxWeight)}</Text>
+                      <Text style={[styles.recordLabel, { color: colors.textMuted }]}>{preferences.weightUnit}</Text>
                     </View>
-                    <View style={styles.recordDivider} />
+                    <View style={[styles.recordDivider, { backgroundColor: colors.surfaceLight }]} />
                     <View style={styles.recordStat}>
-                      <Text style={styles.recordValue}>{record.maxReps}</Text>
-                      <Text style={styles.recordLabel}>reps</Text>
+                      <Text style={[styles.recordValue, { color: colors.text }]}>{record.maxReps}</Text>
+                      <Text style={[styles.recordLabel, { color: colors.textMuted }]}>reps</Text>
                     </View>
                   </View>
                 </View>
@@ -164,51 +174,52 @@ export default function ProgressScreen() {
 
         {/* Achievements */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Achievements</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Achievements</Text>
           <View style={styles.achievementsGrid}>
             <View
               style={[
                 styles.achievementCard,
-                (stats?.totalWorkouts ?? 0) >= 1 && styles.achievementUnlocked,
-              ]
-}
+                { backgroundColor: colors.surface },
+                (stats?.totalWorkouts ?? 0) >= 1 && [styles.achievementUnlocked, { borderColor: staticColors.secondary + "40" }],
+              ]}
             >
               <Ionicons
                 name="star"
                 size={32}
-             
-   color={(stats?.totalWorkouts ?? 0) >= 1 ? colors.secondary : colors.textMuted}
+                color={(stats?.totalWorkouts ?? 0) >= 1 ? staticColors.secondary : colors.textMuted}
               />
-              <Text style={styles.achievementTitle}>First Step</Text>
-              <Text style={styles.achievementDesc}>Complete 1 workout</Text>
+              <Text style={[styles.achievementTitle, { color: colors.text }]}>First Step</Text>
+              <Text style={[styles.achievementDesc, { color: colors.textMuted }]}>Complete 1 workout</Text>
             </View>
             <View
               style={[
                 styles.achievementCard,
-                (stats?.totalWorkouts ?? 0) >= 10 && styles.achievementUnlocked,
+                { backgroundColor: colors.surface },
+                (stats?.totalWorkouts ?? 0) >= 10 && [styles.achievementUnlocked, { borderColor: accentColor + "40" }],
               ]}
             >
               <Ionicons
                 name="flame"
                 size={32}
-                color={(stats?.totalWorkouts ?? 0) >= 10 ? colors.primary : colors.textMuted}
+                color={(stats?.totalWorkouts ?? 0) >= 10 ? accentColor : colors.textMuted}
               />
-              <Text style={styles.achievementTitle}>On Fire</Text>
-              <Text style={styles.achievementDesc}>Complete 10 workouts</Text>
+              <Text style={[styles.achievementTitle, { color: colors.text }]}>On Fire</Text>
+              <Text style={[styles.achievementDesc, { color: colors.textMuted }]}>Complete 10 workouts</Text>
             </View>
             <View
               style={[
                 styles.achievementCard,
-                (stats?.currentStreak ?? 0) >= 7 && styles.achievementUnlocked,
+                { backgroundColor: colors.surface },
+                (stats?.currentStreak ?? 0) >= 7 && [styles.achievementUnlocked, { borderColor: staticColors.accent + "40" }],
               ]}
             >
               <Ionicons
                 name="calendar"
                 size={32}
-                color={(stats?.currentStreak ?? 0) >= 7 ? colors.accent : colors.textMuted}
+                color={(stats?.currentStreak ?? 0) >= 7 ? staticColors.accent : colors.textMuted}
               />
-              <Text style={styles.achievementTitle}>Week Warrior</Text>
-              <Text style={styles.achievementDesc}>7 day streak</Text>
+              <Text style={[styles.achievementTitle, { color: colors.text }]}>Week Warrior</Text>
+              <Text style={[styles.achievementDesc, { color: colors.textMuted }]}>7 day streak</Text>
             </View>
           </View>
         </View>
@@ -220,7 +231,6 @@ export default function ProgressScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -234,24 +244,19 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h1,
-    color: colors.text,
     marginBottom: spacing.xs,
   },
   subtitle: {
     ...typography.body,
-    color: colors.textSecondary,
   },
   section: {
     marginBottom: spacing.lg,
   },
   sectionTitle: {
     ...typography.h3,
-    color: colors.text,
     marginBottom: spacing.md,
   },
   activityCard: {
-  
-  backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
   },
@@ -272,7 +277,6 @@ const styles = StyleSheet.create({
   },
   activityLabel: {
     ...typography.small,
-    color: colors.textMuted,
   },
   statsGrid: {
     flexDirection: "row",
@@ -285,7 +289,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...typography.body,
-    color: colors.textSecondary,
   },
   recordsGrid: {
     flexDirection: "row",
@@ -293,7 +296,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   recordCard: {
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     width: (width - spacing.lg * 2 - spacing.md) / 2,
@@ -306,7 +308,6 @@ const styles = StyleSheet.create({
   },
   recordName: {
     ...typography.caption,
-    color: colors.text,
     fontWeight: "600",
     flex: 1,
   },
@@ -320,16 +321,13 @@ const styles = StyleSheet.create({
   },
   recordValue: {
     ...typography.h2,
-    color: colors.text,
   },
   recordLabel: {
     ...typography.small,
-    color: colors.textMuted,
   },
   recordDivider: {
     width: 1,
     height: 30,
-    backgroundColor: colors.surfaceLight,
   },
   achievementsGrid: {
     flexDirection: "row",
@@ -337,7 +335,6 @@ const styles = StyleSheet.create({
   },
   achievementCard: {
     flex: 1,
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     alignItems: "center",
@@ -346,19 +343,15 @@ const styles = StyleSheet.create({
   achievementUnlocked: {
     opacity: 1,
     borderWidth: 1,
-    borderColor: colors.secondary + "40",
   },
   achievementTitle: {
     ...typography.caption,
-    color: colors.text,
-    fontWeight: 
-"600",
+    fontWeight: "600",
     marginTop: spacing.sm,
     textAlign: "center",
   },
   achievementDesc: {
     ...typography.small,
-    color: colors.textMuted,
     textAlign: "center",
     marginTop: spacing.xs,
   },

@@ -1,27 +1,29 @@
 import { Button } from "@/components/Button";
 import { EmptyState } from "@/components/EmptyState";
 import { WorkoutCard } from "@/components/WorkoutCard";
-import { borderRadius, colors, spacing, typography } from "@/constants/theme";
+import { borderRadius, spacing, colors as staticColors, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
 import { Doc } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/lib/auth-context";
+import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import React from "react";
 import {
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function WorkoutsScreen() {
   const { user } = useAuth();
+  const { colors, accentColor } = useSettings();
   const workouts = useQuery(api.workouts.list, user ? { userId: user.id } : "skip");
 
   const handleNewWorkout = () => {
@@ -46,11 +48,11 @@ export default function WorkoutsScreen() {
   }, [workouts]);
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Workouts</Text>
-        <TouchableOpacity style={styles.addButton} onPress={handleNewWorkout}>
+        <Text style={[styles.title, { color: colors.text }]}>Workouts</Text>
+        <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.surface }]} onPress={handleNewWorkout}>
           <Ionicons name="add" size={28} color={colors.text} />
         </TouchableOpacity>
       </View>
@@ -62,7 +64,7 @@ export default function WorkoutsScreen() {
       >
         {workouts === undefined ? (
           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading workouts...</Text>
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading workouts...</Text>
  
          </View>
         ) : workouts.length === 0 ? (
@@ -81,7 +83,7 @@ export default function WorkoutsScreen() {
         ) : (
           Object.entries(groupedWorkouts).map(([month, monthWorkouts]) => (
             <View key={month} style={styles.monthSection}>
-              <Text style={styles.monthTitle}>{month}</Text>
+              <Text style={[styles.monthTitle, { color: colors.textSecondary }]}>{month}</Text>
               {monthWorkouts.map((workout: Doc<"workouts">) => (
                 <WorkoutCard
                   key={workout._id}
@@ -99,8 +101,8 @@ export default function WorkoutsScreen() {
 
       {/* Floating Action Button */}
       {workouts && workouts.length > 0 && (
-        <TouchableOpacity style={styles.fab} onPress={handleNewWorkout} activeOpacity={0.8}>
-          <Ionicons name="add" size={32} color={colors.text} />
+        <TouchableOpacity style={[styles.fab, { backgroundColor: accentColor, shadowColor: accentColor }]} onPress={handleNewWorkout} activeOpacity={0.8}>
+          <Ionicons name="add" size={32} color={staticColors.text} />
         </TouchableOpacity>
       )}
     </SafeAreaView>
@@ -110,7 +112,6 @@ export default function WorkoutsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
@@ -121,13 +122,11 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h1,
-    color: colors.text,
   },
   addButton: {
     width: 48,
     height: 48,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -146,14 +145,12 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...typography.body,
-    color: colors.textSecondary,
   },
   monthSection: {
     marginBottom: spacing.lg,
   },
   monthTitle: {
     ...typography.h3,
-    color: colors.textSecondary,
     marginBottom: spacing.md,
   },
   fab: {
@@ -163,10 +160,8 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
