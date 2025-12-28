@@ -16,6 +16,7 @@ interface ExerciseCardProps {
   sets: Set[];
   category?: string;
   onToggleSet?: (setIndex: number) => void;
+  onEditSet?: (setIndex: number) => void;
   onRemove?: () => void;
 }
 
@@ -24,6 +25,7 @@ export function ExerciseCard({
   sets,
   category = "chest",
   onToggleSet,
+  onEditSet,
   onRemove,
 }: ExerciseCardProps) {
   const { preferences, colors } = useSettings();
@@ -43,6 +45,13 @@ export function ExerciseCard({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     onToggleSet?.(index);
+  };
+
+  const handleLongPressSet = (index: number) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    }
+    onEditSet?.(index);
   };
 
   return (
@@ -77,6 +86,8 @@ export function ExerciseCard({
             key={index}
             style={[styles.setRow, { borderBottomColor: colors.surface }, set.completed && { backgroundColor: staticColors.success + "10" }]}
             onPress={() => handleToggleSet(index)}
+            onLongPress={() => handleLongPressSet(index)}
+            delayLongPress={400}
             activeOpacity={0.7}
           >
             <Text style={[styles.setText, { flex: 1, color: colors.text }]}>{index + 1}</Text>
