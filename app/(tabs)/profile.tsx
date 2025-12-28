@@ -1,3 +1,4 @@
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { borderRadius, spacing, colors as staticColors, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/lib/auth-context";
@@ -49,6 +50,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <AnimatedBackground />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

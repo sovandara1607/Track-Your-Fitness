@@ -1,16 +1,17 @@
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { borderRadius, spacing, colors as staticColors, typography } from "@/constants/theme";
 import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import {
-   Alert,
-   Linking,
-   ScrollView,
-   StyleSheet,
-   Text,
-   TouchableOpacity,
-   View,
+    Alert,
+    Linking,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -46,6 +47,7 @@ export default function AboutScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <AnimatedBackground />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.surface }]}>

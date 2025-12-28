@@ -1,3 +1,4 @@
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { borderRadius, spacing, typography } from "@/constants/theme";
 import { useSettings } from "@/lib/settings-context";
 import { PreferencesSettings } from "@/lib/storage";
@@ -5,12 +6,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import {
-   ScrollView,
-   StyleSheet,
-   Switch,
-   Text,
-   TouchableOpacity,
-   View,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -28,6 +29,7 @@ export default function PreferencesScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <AnimatedBackground />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.surface }]}>

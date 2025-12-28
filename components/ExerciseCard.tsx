@@ -40,6 +40,26 @@ export function ExerciseCard({
     return weightInLbs;
   };
 
+  // Determine if this is a cardio/timed exercise
+  const isCardio = category === "cardio";
+  const isTimedExercise = name.toLowerCase().includes("plank") || 
+                          name.toLowerCase().includes("hold") ||
+                          name.toLowerCase().includes("wall sit");
+  
+  // Get the appropriate label for the reps column
+  const getRepsLabel = () => {
+    if (isCardio) return "MINS";
+    if (isTimedExercise) return "SECS";
+    return "REPS";
+  };
+
+  // Format the reps/time value for display
+  const formatRepsValue = (reps: number) => {
+    if (isCardio) return `${reps} min`;
+    if (isTimedExercise) return `${reps}s`;
+    return String(reps);
+  };
+
   const handleToggleSet = (index: number) => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -76,8 +96,10 @@ export function ExerciseCard({
       <View style={[styles.setsContainer, { backgroundColor: colors.surfaceLight }]}>
         <View style={[styles.setsHeader, { borderBottomColor: colors.surface }]}>
           <Text style={[styles.setHeaderText, { flex: 1, color: colors.textMuted }]}>SET</Text>
-          <Text style={[styles.setHeaderText, { flex: 2, color: colors.textMuted }]}>WEIGHT</Text>
-          <Text style={[styles.setHeaderText, { flex: 2, color: colors.textMuted }]}>REPS</Text>
+          {!isCardio && (
+            <Text style={[styles.setHeaderText, { flex: 2, color: colors.textMuted }]}>WEIGHT</Text>
+          )}
+          <Text style={[styles.setHeaderText, { flex: 2, color: colors.textMuted }]}>{getRepsLabel()}</Text>
           <Text style={[styles.setHeaderText, { width: 40, color: colors.textMuted }]}>✓</Text>
         </View>
 
@@ -91,10 +113,12 @@ export function ExerciseCard({
             activeOpacity={0.7}
           >
             <Text style={[styles.setText, { flex: 1, color: colors.text }]}>{index + 1}</Text>
-            <Text style={[styles.setText, { flex: 2, color: colors.text }]}>
-              {set.weight > 0 ? `${displayWeight(set.weight)} ${preferences.weightUnit}` : "BW"}
-            </Text>
-            <Text style={[styles.setText, { flex: 2, color: colors.text }]}>{set.reps}</Text>
+            {!isCardio && (
+              <Text style={[styles.setText, { flex: 2, color: colors.text }]}>
+                {set.weight > 0 ? `${displayWeight(set.weight)} ${preferences.weightUnit}` : "BW"}
+              </Text>
+            )}
+            <Text style={[styles.setText, { flex: 2, color: colors.text }]}>{formatRepsValue(set.reps)}</Text>
             <View style={{ width: 40, alignItems: "center" }}>
               <View
                 style={[

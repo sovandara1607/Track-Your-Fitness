@@ -1,5 +1,6 @@
 
 
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { Button } from "@/components/Button";
 import { ExerciseCard } from "@/components/ExerciseCard";
 import { borderRadius, getCategoryColor, spacing, typography } from "@/constants/theme";
@@ -29,12 +30,27 @@ interface ExerciseData {
   sets: Array<{ reps: number; weight: number; completed: boolean }>;
 }
 
+interface SelectedTemplate {
+  name: string;
+  category: string;
+  defaultSets: number;
+  defaultReps: number;
+  defaultWeight: number;
+}
+
 export default function NewWorkoutScreen() {
   const [workoutName, setWorkoutName] = useState("");
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [startTime] = useState(Date.now());
+
+  // State for exercise configuration modal
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<SelectedTemplate | null>(null);
+  const [configSets, setConfigSets] = useState("");
+  const [configReps, setConfigReps] = useState("");
+  const [configWeight, setConfigWeight] = useState("");
 
   const { user } = useAuth();
   const { preferences, colors, accentColor } = useSettings();
@@ -51,31 +67,65 @@ export default function NewWorkoutScreen() {
     return weightInLbs;
   };
 
-  const handleAddExercise = (template: {
-    name: string;
-    category: string;
-    defaultSets: number;
-    defaultReps: number;
-    defaultWeight: number;
-  }) => {
+  // Convert weight from display unit back to lbs for storage
+  const toStorageWeight = (displayValue: number) => {
+    if (preferences.weightUnit === "kg") {
+      return Math.round(displayValue / 0.453592);
+    }
+    return displayValue;
+  };
+
+  const handleSelectTemplate = (template: SelectedTemplate) => {
+    setSelectedTemplate(template);
+    setConfigSets(String(template.defaultSets));
+    setConfigReps(String(template.defaultReps));
+    setConfigWeight(String(displayWeight(template.defaultWeight)));
+    setShowExercisePicker(false);
+    setShowConfigModal(true);
+  };
+
+  const handleConfirmExercise = () => {
+    if (!selectedTemplate) return;
+
+    const sets = parseInt(configSets, 10);
+    const reps = parseInt(configReps, 10);
+    const weight = parseInt(configWeight, 10);
+
+    if (isNaN(sets) || sets < 1) {
+      return;
+    }
+    if (isNaN(reps) || reps < 1) {
+      return;
+    }
+    if (isNaN(weight) || weight < 0) {
+      return;
+    }
+
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
     const newExercise: ExerciseData = {
-      name: template.name,
-      category: template.category,
-      sets: Array(template.defaultSets)
+      name: selectedTemplate.name,
+      category: selectedTemplate.category,
+      sets: Array(sets)
         .fill(null)
         .map(() => ({
-          reps: template.defaultReps,
-          weight: template.defaultWeight,
+          reps,
+          weight: toStorageWeight(weight),
           completed: false,
         })),
     };
 
     setExercises([...exercises, newExercise]);
-    setShowExercisePicker(false);
+    setShowConfigModal(false);
+    setSelectedTemplate(null);
+  };
+
+  const handleCancelConfig = () => {
+    setShowConfigModal(false);
+    setSelectedTemplate(null);
+    setShowExercisePicker(true);
   };
 
   const handleToggleSet 
@@ -150,6 +200,7 @@ export default function NewWorkoutScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
+      <AnimatedBackground />
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.surface }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -250,27 +301,126 @@ export default function NewWorkoutScreen() {
                     {category.charAt(0).toUpperCase() + category.slice(1)}
                   </Text>
                 </View>
-                {categoryTemplates.map((template) => (
-                  <TouchableOpacity
-                    key={template._id}
-                    style={[styles.templateItem, { backgroundColor: colors.surface }]}
-                    onPress={() => handleAddExercise(template)}
-                    activeOpacity={0.7}
-                  >
-                    <View>
-                      <Text style={[styles.templateName, { color: colors.text }]}>{template.name}</Text>
-                      <Text style={[styles.templateDetails, { color: colors.textSecondary }]}>
-                        {template.defaultSets} sets × {template.defaultReps} reps
-                        {template.defaultWeight > 0 && ` @ ${displayWeight(template.defaultWeight)} ${preferences.weightUnit}`}
-                      </Text>
-                    </View>
-                    <Ionicons name="add-circle-outline" size={24} color={accentColor} />
-                  </TouchableOpacity>
-                ))}
+                {categoryTemplates.map((template) => {
+                  const isCardio = template.category === "cardio";
+                  const isTimedExercise = template.name.toLowerCase().includes("plank") || 
+                                          template.name.toLowerCase().includes("hold");
+                  const unitLabel = isCardio ? "min" : isTimedExercise ? "sec" : "reps";
+                  
+                  return (
+                    <TouchableOpacity
+                      key={template._id}
+                      style={[styles.templateItem, { backgroundColor: colors.surface }]}
+                      onPress={() => handleSelectTemplate(template)}
+                      activeOpacity={0.7}
+                    >
+                      <View>
+                        <Text style={[styles.templateName, { color: colors.text }]}>{template.name}</Text>
+                        <Text style={[styles.templateDetails, { color: colors.textSecondary }]}>
+                          {isCardio ? `${template.defaultReps} ${unitLabel}` : (
+                            <>
+                              {template.defaultSets} sets × {template.defaultReps} {unitLabel}
+                              {template.defaultWeight > 0 && ` @ ${displayWeight(template.defaultWeight)} ${preferences.weightUnit}`}
+                            </>
+                          )}
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={24} color={accentColor} />
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             ))}
           </ScrollView>
         </SafeAreaView>
+      </Modal>
+
+      {/* Exercise Configuration Modal */}
+      <Modal
+        visible={showConfigModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelConfig}
+      >
+        <View style={styles.configModalOverlay}>
+          <View style={[styles.configModalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.configModalTitle, { color: colors.text }]}>
+              {selectedTemplate?.name}
+            </Text>
+            <Text style={[styles.configModalSubtitle, { color: colors.textSecondary }]}>
+              Customize your exercise
+            </Text>
+
+            {(() => {
+              const isCardio = selectedTemplate?.category === "cardio";
+              const isTimedExercise = selectedTemplate?.name.toLowerCase().includes("plank") || 
+                                      selectedTemplate?.name.toLowerCase().includes("hold");
+              const timeLabel = isCardio ? "Minutes" : isTimedExercise ? "Seconds" : "Reps";
+              
+              return (
+                <View style={styles.configInputRow}>
+                  {!isCardio && (
+                    <View style={styles.configInputGroup}>
+                      <Text style={[styles.configLabel, { color: colors.textSecondary }]}>Sets</Text>
+                      <TextInput
+                        style={[styles.configInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
+                        value={configSets}
+                        onChangeText={setConfigSets}
+                        keyboardType="number-pad"
+                        placeholder="3"
+                        placeholderTextColor={colors.textMuted}
+                        autoFocus={!isCardio}
+                      />
+                    </View>
+                  )}
+                  <View style={styles.configInputGroup}>
+                    <Text style={[styles.configLabel, { color: colors.textSecondary }]}>{timeLabel}</Text>
+                    <TextInput
+                      style={[styles.configInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
+                      value={configReps}
+                      onChangeText={setConfigReps}
+                      keyboardType="number-pad"
+                      placeholder={isCardio ? "30" : "10"}
+                      placeholderTextColor={colors.textMuted}
+                      autoFocus={isCardio}
+                    />
+                  </View>
+                  {!isCardio && (
+                    <View style={styles.configInputGroup}>
+                      <Text style={[styles.configLabel, { color: colors.textSecondary }]}>
+                        {preferences.weightUnit.toUpperCase()}
+                      </Text>
+                      <TextInput
+                        style={[styles.configInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
+                        value={configWeight}
+                        onChangeText={setConfigWeight}
+                        keyboardType="number-pad"
+                        placeholder="0"
+                        placeholderTextColor={colors.textMuted}
+                      />
+                    </View>
+                  )}
+                </View>
+              );
+            })()}
+
+            <View style={styles.configButtons}>
+              <TouchableOpacity
+                style={[styles.configButton, { backgroundColor: colors.background }]}
+                onPress={handleCancelConfig}
+              >
+                <Text style={[styles.configButtonText, { color: colors.textSecondary }]}>Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.configButton, { backgroundColor: accentColor }]}
+                onPress={handleConfirmExercise}
+              >
+                <Ionicons name="add" size={20} color="#FFFFFF" />
+                <Text style={[styles.configButtonText, { color: "#FFFFFF" }]}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -392,6 +542,73 @@ const styles = StyleSheet.create({
   },
   templateDetails: {
     ...typography.caption,
+  },
+  // Configuration Modal Styles
+  configModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    paddingTop: 120,
+    paddingHorizontal: spacing.lg,
+  },
+  configModalContent: {
+    width: "100%",
+    maxWidth: 340,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+  },
+  configModalTitle: {
+    ...typography.h2,
+    textAlign: "center",
+    marginBottom: spacing.xs,
+  },
+  configModalSubtitle: {
+    ...typography.caption,
+    textAlign: "center",
+    marginBottom: spacing.lg,
+  },
+  configInputRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: spacing.lg,
+  },
+  configInputGroup: {
+    width: "30%",
+    alignItems: "center",
+  },
+  configLabel: {
+    ...typography.caption,
+    marginBottom: spacing.xs,
+    textAlign: "center",
+  },
+  configInput: {
+    ...typography.body,
+    width: "100%",
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "600",
+  },
+  configButtons: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  configButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  configButtonText: {
+    ...typography.body,
+    fontWeight: "600",
   },
 });
 

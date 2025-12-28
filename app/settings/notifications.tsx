@@ -1,16 +1,23 @@
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { borderRadius, spacing, typography } from "@/constants/theme";
+import {
+  cancelAllNotifications,
+  requestNotificationPermissions,
+  scheduleWorkoutReminder
+} from "@/lib/notifications";
 import { useSettings } from "@/lib/settings-context";
 import { NotificationSettings } from "@/lib/storage";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
-   ScrollView,
-   StyleSheet,
-   Switch,
-   Text,
-   TouchableOpacity,
-   View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -50,9 +57,34 @@ const notificationOptions: NotificationSetting[] = [
 
 export default function NotificationsScreen() {
   const { notifications, updateNotifications, colors, accentColor } = useSettings();
+  const [permissionGranted, setPermissionGranted] = useState(true);
+
+  useEffect(() => {
+    checkPermissions();
+  }, []);
+
+  const checkPermissions = async () => {
+    const granted = await requestNotificationPermissions();
+    setPermissionGranted(granted);
+  };
 
   const toggleSetting = async (id: keyof NotificationSettings) => {
-    await updateNotifications({ [id]: !notifications[id] });
+    const newValue = !notifications[id];
+    await updateNotifications({ [id]: newValue });
+
+    // Handle workout reminders scheduling
+    if (id === "workout_reminders") {
+      if (newValue) {
+        try {
+          await scheduleWorkoutReminder(18, 0); // 6 PM daily reminder
+        } catch (error) {
+          console.log("Failed to schedule reminder:", error);
+        }
+      } else {
+        // Cancel scheduled reminders when disabled
+        await cancelAllNotifications();
+      }
+    }
   };
 
   const toggleAll = async (value: boolean) => {
@@ -63,12 +95,27 @@ export default function NotificationsScreen() {
       weekly_summary: value,
       rest_day: value,
     });
+
+    if (!value) {
+      await cancelAllNotifications();
+    }
+  };
+
+  const handleTestNotification = async () => {
+    const { sendWorkoutCompletedNotification } = await import("@/lib/notifications");
+    try {
+      await sendWorkoutCompletedNotification("Test Workout");
+      Alert.alert("Notification Sent", "Check your notification center!");
+    } catch {
+      Alert.alert("Error", "Failed to send test notification");
+    }
   };
 
   const hasAnyEnabled = Object.values(notifications).some((v) => v);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <AnimatedBackground />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.surface }]}>
@@ -82,6 +129,19 @@ export default function NotificationsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Permission Warning */}
+        {!permissionGranted && (
+          <TouchableOpacity 
+            style={[styles.warningBox, { backgroundColor: "#FFA50020", borderColor: "#FFA500" }]}
+            onPress={checkPermissions}
+          >
+            <Ionicons name="warning" size={20} color="#FFA500" />
+            <Text style={[styles.warningText, { color: "#FFA500" }]}>
+              Notifications are disabled. Tap to enable in settings.
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {/* Master Toggle */}
         <View style={[styles.masterToggle, { backgroundColor: colors.surface }]}>
           <View style={styles.masterToggleText}>
@@ -97,6 +157,15 @@ export default function NotificationsScreen() {
             thumbColor={hasAnyEnabled ? accentColor : colors.textMuted}
           />
         </View>
+
+        {/* Test Notification Button */}
+        <TouchableOpacity
+          style={[styles.testButton, { backgroundColor: accentColor }]}
+          onPress={handleTestNotification}
+        >
+          <Ionicons name="notifications" size={20} color="#FFFFFF" />
+          <Text style={styles.testButtonText}>Send Test Notification</Text>
+        </TouchableOpacity>
 
         {/* Individual Settings */}
         <View style={styles.section}>
@@ -213,5 +282,33 @@ const styles = StyleSheet.create({
   infoText: {
     ...typography.caption,
     flex: 1,
+  },
+  warningBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+  },
+  warningText: {
+    ...typography.body,
+    flex: 1,
+    fontWeight: "500",
+  },
+  testButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  testButtonText: {
+    ...typography.body,
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
 });

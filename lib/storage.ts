@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: "@lift_notifications",
   THEME: "@lift_theme",
   PREFERENCES: "@lift_preferences",
+  SHOWN_ACHIEVEMENTS: "@lift_shown_achievements",
 } as const;
 
 // Notification Settings
@@ -116,5 +117,27 @@ export async function clearAllSettings(): Promise<void> {
     ]);
   } catch (error) {
     console.error("Failed to clear settings:", error);
+  }
+}
+
+// Achievement Tracking
+export async function getShownAchievements(): Promise<string[]> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.SHOWN_ACHIEVEMENTS);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function markAchievementShown(achievementId: string): Promise<void> {
+  try {
+    const shown = await getShownAchievements();
+    if (!shown.includes(achievementId)) {
+      shown.push(achievementId);
+      await AsyncStorage.setItem(STORAGE_KEYS.SHOWN_ACHIEVEMENTS, JSON.stringify(shown));
+    }
+  } catch (error) {
+    console.error("Failed to save shown achievement:", error);
   }
 }

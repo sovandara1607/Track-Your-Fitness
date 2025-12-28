@@ -1,10 +1,15 @@
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { Button } from "@/components/Button";
 import { EmptyState } from "@/components/EmptyState";
 import { ExerciseCard } from "@/components/ExerciseCard";
+import { HydrationTracker } from "@/components/HydrationTracker";
+import { MusicPlayer } from "@/components/MusicPlayer";
+import { RestTimer } from "@/components/RestTimer";
 import { borderRadius, getCategoryColor, spacing, colors as staticColors, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/lib/auth-context";
+import { sendWorkoutCompletedNotification } from "@/lib/notifications";
 import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
@@ -33,10 +38,13 @@ export default function WorkoutDetailScreen() {
 
   // State for editing modals
   const [durationModalVisible, setDurationModalVisible] = React.useState(false);
-  const [editDuration, setEditDuration] = React.useState("");
+  const [selectedDuration, setSelectedDuration] = React.useState(30);
+  const [nameModalVisible, setNameModalVisible] = React.useState(false);
+  const [editName, setEditName] = React.useState("");
   const [editSetModalVisible, setEditSetModalVisible] = React.useState(false);
   const [editingExercise, setEditingExercise] = React.useState<{
     exerciseId: Id<"exercises">;
+    exerciseName: string;
     setIndex: number;
     weight: string;
     reps: string;
@@ -109,22 +117,48 @@ export default function WorkoutDetailScreen() {
     setShowExercisePicker(false);
   };
 
+  // Duration options for picker (5 to 180 minutes)
+  const durationOptions = React.useMemo(() => {
+    const options = [];
+    // 5-minute increments up to 60
+    for (let i = 5; i <= 60; i += 5) options.push(i);
+    // 10-minute increments from 70 to 120
+    for (let i = 70; i <= 120; i += 10) options.push(i);
+    // 30-minute increments from 150 to 180
+    options.push(150, 180);
+    return options;
+  }, []);
+
   const handleEditDuration = () => {
     if (workout) {
-      setEditDuration(String(workout.duration));
+      setSelectedDuration(workout.duration);
       setDurationModalVisible(true);
     }
   };
 
-  const handleSaveDuration = async () => {
+  const handleSelectDuration = async (duration: number) => {
     if (!user || !workout) return;
-    const newDuration = parseInt(editDuration, 10);
-    if (isNaN(newDuration) || newDuration < 1) {
-      Alert.alert("Invalid Duration", "Please enter a valid number of minutes.");
+    setSelectedDuration(duration);
+    await updateWorkout({ userId: user.id, workoutId, duration });
+    setDurationModalVisible(false);
+  };
+
+  const handleEditName = () => {
+    if (workout) {
+      setEditName(workout.name);
+      setNameModalVisible(true);
+    }
+  };
+
+  const handleSaveName = async () => {
+    if (!user || !workout) return;
+    const newName = editName.trim();
+    if (!newName) {
+      Alert.alert("Invalid Name", "Please enter a workout name.");
       return;
     }
-    await updateWorkout({ userId: user.id, workoutId, duration: newDuration });
-    setDurationModalVisible(false);
+    await updateWorkout({ userId: user.id, workoutId, name: newName });
+    setNameModalVisible(false);
   };
 
   const handleEditSet = (exerciseId: Id<"exercises">, setIndex: number) => {
@@ -133,6 +167,7 @@ export default function WorkoutDetailScreen() {
     const set = exercise.sets[setIndex];
     setEditingExercise({
       exerciseId,
+      exerciseName: exercise.name,
       setIndex,
       weight: String(displayWeight(set.weight)),
       reps: String(set.reps),
@@ -185,11 +220,18 @@ export default function WorkoutDetailScreen() {
   };
 
   const handleCompleteWorkout = async () => {
-    if (!user) return;
+    if (!user || !workout) return;
     if (Platform.OS !== "web") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     await updateWorkout({ userId: user.id, workoutId, completed: true });
+    
+    // Send notification
+    try {
+      await sendWorkoutCompletedNotification(workout.name);
+    } catch (error) {
+      console.log("Failed to send notification:", error);
+    }
   };
 
   const handleUncompleteWorkout = async () => {
@@ -241,6 +283,7 @@ export default function WorkoutDetailScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
+      <AnimatedBackground />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.surface }]}>
@@ -259,13 +302,20 @@ export default function WorkoutDetailScreen() {
         {/* Workout Info */}
         <View style={styles.infoSection}>
           <View style={styles.titleRow}>
-            <Text style={[styles.title, { color: colors.text }]}>{workout.name}</Text>
-            {workout.completed && (
-              <View style={[styles.completedBadge, { backgroundColor: staticColors.success + "20" }]}>
-                <Ionicons name="checkmark-circle" size={20} color={staticColors.success} />
-                <Text style={[styles.completedText, { color: staticColors.success }]}>Completed</Text>
-              </View>
-            )}
+            <TouchableOpacity onPress={handleEditName} style={styles.titleButton}>
+              <Text style={[styles.title, { color: colors.text }]}>{workout.name}</Text>
+              <Ionicons name="pencil" size={18} color={accentColor} style={styles.titleEditIcon} />
+            </TouchableOpacity>
+            <View style={[styles.completedBadge, { backgroundColor: workout.completed ? staticColors.success + "20" : staticColors.warning + "20" }]}>
+              <Ionicons 
+                name={workout.completed ? "checkmark-circle" : "time-outline"} 
+                size={20} 
+                color={workout.completed ? staticColors.success : staticColors.warning} 
+              />
+              <Text style={[styles.completedText, { color: workout.completed ? staticColors.success : staticColors.warning }]}>
+                {workout.completed ? "Completed" : "In Progress"}
+              </Text>
+            </View>
           </View>
           <Text style={[styles.date, { color: colors.textSecondary }]}>
             {new Date(workout.date).toLocaleDateString("en-US", {
@@ -291,10 +341,18 @@ export default function WorkoutDetailScreen() {
 
           {/* Stats Row */}
           <View style={styles.statsRow}>
-            <TouchableOpacity style={styles.statItem} onPress={handleEditDuration}>
+            <TouchableOpacity 
+              style={styles.statItem} 
+              onLongPress={() => {
+                if (Platform.OS !== "web") {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                handleEditDuration();
+              }}
+              delayLongPress={150}
+            >
               <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
               <Text style={[styles.statText, { color: colors.textSecondary }]}>{workout.duration} min</Text>
-              <Ionicons name="pencil" size={14} color={accentColor} />
             </TouchableOpacity>
             <View style={styles.statItem}>
               <Ionicons name="barbell-outline" size={20} color={colors.textSecondary} />
@@ -307,6 +365,16 @@ export default function WorkoutDetailScreen() {
           </View>
         </View>
 
+        {/* Smart Workout Tools */}
+        {!workout.completed && (
+          <View style={styles.smartToolsSection}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Smart Tools</Text>
+            <RestTimer defaultSeconds={60} />
+            <HydrationTracker />
+            <MusicPlayer minimized />
+          </View>
+        )}
+
         {/* Exercises */}
         <View style={styles.exercisesSection}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Exercises</Text>
@@ -315,15 +383,22 @@ export default function WorkoutDetailScreen() {
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>No exercises logged</Text>
             </View>
           ) : (
-            exercises.map((exercise) => (
-              <ExerciseCard
-                key={exercise._id}
-                name={exercise.name}
-                sets={exercise.sets}
-                onToggleSet={(setIndex) => handleToggleSet(exercise._id, setIndex)}
-                onEditSet={(setIndex) => handleEditSet(exercise._id, setIndex)}
-              />
-            ))
+            exercises.map((exercise) => {
+              // Look up the category from templates
+              const template = templates?.find((t) => t.name === exercise.name);
+              const category = template?.category || "chest";
+              
+              return (
+                <ExerciseCard
+                  key={exercise._id}
+                  name={exercise.name}
+                  sets={exercise.sets}
+                  category={category}
+                  onToggleSet={(setIndex) => handleToggleSet(exercise._id, setIndex)}
+                  onEditSet={(setIndex) => handleEditSet(exercise._id, setIndex)}
+                />
+              );
+            })
           )}
 
           {/* Add Exercise Button (when not completed) */}
@@ -383,26 +458,76 @@ export default function WorkoutDetailScreen() {
         onRequestClose={() => setDurationModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, styles.durationModalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Select Duration</Text>
+            <ScrollView 
+              style={styles.durationScrollView}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.durationScrollContent}
+            >
+              {durationOptions.map((duration) => (
+                <TouchableOpacity
+                  key={duration}
+                  style={[
+                    styles.durationOption,
+                    { backgroundColor: colors.background },
+                    selectedDuration === duration && { backgroundColor: accentColor + "20", borderColor: accentColor },
+                  ]}
+                  onPress={() => handleSelectDuration(duration)}
+                >
+                  <Text
+                    style={[
+                      styles.durationOptionText,
+                      { color: colors.text },
+                      selectedDuration === duration && { color: accentColor, fontWeight: "700" },
+                    ]}
+                  >
+                    {duration} min
+                  </Text>
+                  {selectedDuration === duration && (
+                    <Ionicons name="checkmark-circle" size={22} color={accentColor} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              style={[styles.durationCancelButton, { backgroundColor: colors.background }]}
+              onPress={() => setDurationModalVisible(false)}
+            >
+              <Text style={[styles.modalButtonText, { color: colors.textSecondary }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Name Edit Modal */}
+      <Modal
+        visible={nameModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setNameModalVisible(false)}
+      >
+        <View style={[styles.modalOverlay, { justifyContent: "flex-start", paddingTop: 120 }]}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Edit Duration</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Rename Workout</Text>
             <TextInput
-              style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
-              value={editDuration}
-              onChangeText={setEditDuration}
-              keyboardType="number-pad"
-              placeholder="Minutes"
+              style={[styles.modalInput, styles.modalInputText, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
+              value={editName}
+              onChangeText={setEditName}
+              placeholder="Workout name"
               placeholderTextColor={colors.textMuted}
+              autoFocus
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: colors.background }]}
-                onPress={() => setDurationModalVisible(false)}
+                onPress={() => setNameModalVisible(false)}
               >
                 <Text style={[styles.modalButtonText, { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: accentColor }]}
-                onPress={handleSaveDuration}
+                onPress={handleSaveName}
               >
                 <Text style={[styles.modalButtonText, { color: "#FFFFFF" }]}>Save</Text>
               </TouchableOpacity>
@@ -418,33 +543,49 @@ export default function WorkoutDetailScreen() {
         animationType="fade"
         onRequestClose={() => setEditSetModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, { justifyContent: "flex-start", paddingTop: 120 }]}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Edit Set</Text>
             
-            <View style={styles.modalInputGroup}>
-              <Text style={[styles.modalLabel, { color: colors.textSecondary }]}>Weight ({preferences.weightUnit})</Text>
-              <TextInput
-                style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
-                value={editingExercise?.weight ?? ""}
-                onChangeText={(text: string) => setEditingExercise((prev) => prev ? { ...prev, weight: text } : null)}
-                keyboardType="number-pad"
-                placeholder="0"
-                placeholderTextColor={colors.textMuted}
-              />
-            </View>
+            {(() => {
+              // Check if this is a cardio or timed exercise
+              const exerciseName = editingExercise?.exerciseName?.toLowerCase() || "";
+              const isCardio = templates?.find(t => t.name === editingExercise?.exerciseName)?.category === "cardio";
+              const isTimedExercise = exerciseName.includes("plank") || exerciseName.includes("hold") || exerciseName.includes("wall sit");
+              const timeLabel = isCardio ? "Minutes" : isTimedExercise ? "Seconds" : "Reps";
+              
+              return (
+                <>
+                  {!isCardio && (
+                    <View style={styles.modalInputGroup}>
+                      <Text style={[styles.modalLabel, { color: colors.textSecondary }]}>Weight ({preferences.weightUnit})</Text>
+                      <TextInput
+                        style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
+                        value={editingExercise?.weight ?? ""}
+                        onChangeText={(text: string) => setEditingExercise((prev) => prev ? { ...prev, weight: text } : null)}
+                        keyboardType="number-pad"
+                        placeholder="0"
+                        placeholderTextColor={colors.textMuted}
+                        autoFocus={!isCardio}
+                      />
+                    </View>
+                  )}
 
-            <View style={styles.modalInputGroup}>
-              <Text style={[styles.modalLabel, { color: colors.textSecondary }]}>Reps</Text>
-              <TextInput
-                style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
-                value={editingExercise?.reps ?? ""}
-                onChangeText={(text: string) => setEditingExercise((prev) => prev ? { ...prev, reps: text } : null)}
-                keyboardType="number-pad"
-                placeholder="0"
-                placeholderTextColor={colors.textMuted}
-              />
-            </View>
+                  <View style={styles.modalInputGroup}>
+                    <Text style={[styles.modalLabel, { color: colors.textSecondary }]}>{timeLabel}</Text>
+                    <TextInput
+                      style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
+                      value={editingExercise?.reps ?? ""}
+                      onChangeText={(text: string) => setEditingExercise((prev) => prev ? { ...prev, reps: text } : null)}
+                      keyboardType="number-pad"
+                      placeholder="0"
+                      placeholderTextColor={colors.textMuted}
+                      autoFocus={isCardio}
+                    />
+                  </View>
+                </>
+              );
+            })()}
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -496,23 +637,34 @@ export default function WorkoutDetailScreen() {
                     {category.charAt(0).toUpperCase() + category.slice(1)}
                   </Text>
                 </View>
-                {categoryTemplates.map((template) => (
-                  <TouchableOpacity
-                    key={template._id}
-                    style={[styles.templateItem, { backgroundColor: colors.surface }]}
-                    onPress={() => handleAddExercise(template)}
-                    activeOpacity={0.7}
-                  >
-                    <View>
-                      <Text style={[styles.templateName, { color: colors.text }]}>{template.name}</Text>
-                      <Text style={[styles.templateDetails, { color: colors.textSecondary }]}>
-                        {template.defaultSets} sets × {template.defaultReps} reps
-                        {template.defaultWeight > 0 && ` @ ${displayWeight(template.defaultWeight)} ${preferences.weightUnit}`}
-                      </Text>
-                    </View>
-                    <Ionicons name="add-circle-outline" size={24} color={accentColor} />
-                  </TouchableOpacity>
-                ))}
+                {categoryTemplates.map((template) => {
+                  const isCardio = template.category === "cardio";
+                  const isTimedExercise = template.name.toLowerCase().includes("plank") || 
+                                          template.name.toLowerCase().includes("hold");
+                  const unitLabel = isCardio ? "min" : isTimedExercise ? "sec" : "reps";
+                  
+                  return (
+                    <TouchableOpacity
+                      key={template._id}
+                      style={[styles.templateItem, { backgroundColor: colors.surface }]}
+                      onPress={() => handleAddExercise(template)}
+                      activeOpacity={0.7}
+                    >
+                      <View>
+                        <Text style={[styles.templateName, { color: colors.text }]}>{template.name}</Text>
+                        <Text style={[styles.templateDetails, { color: colors.textSecondary }]}>
+                          {isCardio ? `${template.defaultReps} ${unitLabel}` : (
+                            <>
+                              {template.defaultSets} sets × {template.defaultReps} {unitLabel}
+                              {template.defaultWeight > 0 && ` @ ${displayWeight(template.defaultWeight)} ${preferences.weightUnit}`}
+                            </>
+                          )}
+                        </Text>
+                      </View>
+                      <Ionicons name="add-circle-outline" size={24} color={accentColor} />
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             ))}
           </ScrollView>
@@ -572,6 +724,15 @@ const styles = StyleSheet.create({
     ...typography.h1,
     flex: 1,
   },
+  titleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    gap: spacing.sm,
+  },
+  titleEditIcon: {
+    marginTop: 4,
+  },
   completedBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -623,6 +784,9 @@ const styles = StyleSheet.create({
   },
   statText: {
     ...typography.caption,
+  },
+  smartToolsSection: {
+    marginBottom: spacing.lg,
   },
   exercisesSection: {
     marginBottom: spacing.lg,
@@ -710,6 +874,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 18,
   },
+  modalInputText: {
+    textAlign: "left",
+  },
   modalButtons: {
     flexDirection: "row",
     gap: spacing.md,
@@ -724,6 +891,36 @@ const styles = StyleSheet.create({
   modalButtonText: {
     ...typography.body,
     fontWeight: "600",
+  },
+  // Duration picker styles
+  durationModalContent: {
+    maxHeight: 450,
+  },
+  durationScrollView: {
+    maxHeight: 300,
+  },
+  durationScrollContent: {
+    gap: spacing.sm,
+  },
+  durationOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  durationOptionText: {
+    ...typography.body,
+    fontSize: 18,
+  },
+  durationCancelButton: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
   },
   // Add Exercise Button
   addExerciseButton: {

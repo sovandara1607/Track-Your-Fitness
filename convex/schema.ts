@@ -16,6 +16,7 @@ export default defineSchema({
     duration: v.number(),
     notes: v.optional(v.string()),
     completed: v.boolean(),
+    favorite: v.optional(v.boolean()),
   }).index("by_user_id", ["userId"]),
   
   exercises: defineTable({
