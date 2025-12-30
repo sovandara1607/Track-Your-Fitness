@@ -7,6 +7,16 @@ export default defineSchema({
     password: v.string(),
     name: v.string(),
     createdAt: v.number(),
+    // Profile customization fields
+    profileImageId: v.optional(v.id("_storage")),
+    profileImageUrl: v.optional(v.string()),
+    bio: v.optional(v.string()),
+    displayName: v.optional(v.string()),
+    fitnessGoal: v.optional(v.string()),
+    birthDate: v.optional(v.string()),
+    height: v.optional(v.number()),
+    weight: v.optional(v.number()),
+    gender: v.optional(v.string()),
   }).index("by_email", ["email"]),
   
   workouts: defineTable({

@@ -13,6 +13,7 @@ import type * as chatbot from "../chatbot.js";
 import type * as exercises from "../exercises.js";
 import type * as functions from "../functions.js";
 import type * as http from "../http.js";
+import type * as profile from "../profile.js";
 import type * as seed from "../seed.js";
 import type * as seedExercises from "../seedExercises.js";
 import type * as templates from "../templates.js";
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   exercises: typeof exercises;
   functions: typeof functions;
   http: typeof http;
+  profile: typeof profile;
   seed: typeof seed;
   seedExercises: typeof seedExercises;
   templates: typeof templates;

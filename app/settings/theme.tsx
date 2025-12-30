@@ -45,6 +45,7 @@ export default function ThemeScreen() {
     { id: "orange", name: "Orange", color: "#F59E0B" },
     { id: "pink", name: "Pink", color: "#EC4899" },
     { id: "teal", name: "Teal", color: "#14B8A6" },
+    { id: "black", name: "Black", color: "#1F2937" },
   ];
 
   return (
