@@ -1,6 +1,7 @@
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { borderRadius, spacing, colors as staticColors, typography } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/lib/auth-context";
 import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,6 +10,7 @@ import { router } from "expo-router";
 import React from "react";
 import {
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,6 +24,10 @@ export default function ProfileScreen() {
   const { colors, accentColor } = useSettings();
   const stats = useQuery(api.workouts.getStats, user ? { userId: user.id } : "skip");
   const recentWorkouts = useQuery(api.workouts.getRecent, user ? { userId: user.id, limit: 5 } : "skip");
+  const profile = useQuery(
+    api.profile.getProfile,
+    user ? { userId: user.id as Id<"users"> } : "skip"
+  );
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -44,9 +50,12 @@ export default function ProfileScreen() {
     );
   };
 
-  const handleNavigate = (route: "/settings/notifications" | "/settings/theme" | "/settings/preferences" | "/settings/help" | "/settings/about") => {
+  const handleNavigate = (route: "/settings/notifications" | "/settings/theme" | "/settings/preferences" | "/settings/help" | "/settings/about" | "/settings/edit-profile") => {
     router.push(route);
   };
+
+  const displayName = profile?.displayName || profile?.name || user?.name || "User";
+  const userEmail = profile?.email || user?.email || "";
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -57,12 +66,49 @@ export default function ProfileScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={[styles.profileImageContainer, { backgroundColor: colors.surface }]}>
-            <Ionicons name="person" size={48} color={accentColor} />
-          </View>
-          <Text style={[styles.name, { color: colors.text }]}>{user?.name || "User"}</Text>
-          <Text style={[styles.email, { color: colors.textSecondary }]}>{user?.email || ""}</Text>
+          <TouchableOpacity
+            style={[styles.profileImageContainer, { backgroundColor: colors.surface }]}
+            onPress={() => handleNavigate("/settings/edit-profile")}
+          >
+            {profile?.profileImageUrl ? (
+              <Image
+                source={{ uri: profile.profileImageUrl }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <Ionicons name="person" size={48} color={accentColor} />
+            )}
+            <View style={[styles.editBadge, { backgroundColor: accentColor }]}>
+              <Ionicons name="pencil" size={12} color="#fff" />
+            </View>
+          </TouchableOpacity>
+          <Text style={[styles.name, { color: colors.text }]}>{displayName}</Text>
+          <Text style={[styles.email, { color: colors.textSecondary }]}>{userEmail}</Text>
+          {profile?.bio && (
+            <Text style={[styles.bio, { color: colors.textSecondary }]} numberOfLines={2}>
+              {profile.bio}
+            </Text>
+          )}
+          {profile?.fitnessGoal && (
+            <View style={[styles.goalBadge, { backgroundColor: accentColor + "20" }]}>
+              <Ionicons name="fitness" size={14} color={accentColor} />
+              <Text style={[styles.goalText, { color: accentColor }]}>
+                {profile.fitnessGoal}
+              </Text>
+            </View>
+          )}
         </View>
+
+        {/* Edit Profile Button */}
+        <TouchableOpacity
+          style={[styles.editProfileButton, { backgroundColor: colors.surface }]}
+          onPress={() => handleNavigate("/settings/edit-profile")}
+        >
+          <Ionicons name="create-outline" size={20} color={accentColor} />
+          <Text style={[styles.editProfileText, { color: accentColor }]}>
+            Edit Profile
+          </Text>
+        </TouchableOpacity>
 
         {/* Stats Overview */}
         <View style={styles.section}>
@@ -195,6 +241,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.md,
+    overflow: "hidden",
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  editBadge: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
   },
   name: {
     ...typography.h2,
@@ -202,6 +266,38 @@ const styles = StyleSheet.create({
   },
   email: {
     ...typography.body,
+  },
+  bio: {
+    ...typography.body,
+    marginTop: spacing.sm,
+    textAlign: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  goalBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    marginTop: spacing.sm,
+  },
+  goalText: {
+    ...typography.caption,
+    fontWeight: "600",
+  },
+  editProfileButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.xl,
+  },
+  editProfileText: {
+    ...typography.body,
+    fontWeight: "600",
   },
   section: {
     marginBottom: spacing.xl,

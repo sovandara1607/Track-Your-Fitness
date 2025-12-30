@@ -8,6 +8,7 @@ import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/lib/auth-context";
 import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
 import { useMutation, useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
@@ -23,6 +24,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+// Generate picker options
+const generateSetsOptions = () => Array.from({ length: 10 }, (_, i) => i + 1);
+const generateRepsOptions = () => Array.from({ length: 100 }, (_, i) => i + 1);
+const generateWeightOptions = () => Array.from({ length: 301 }, (_, i) => i); // 0-300
+const generateMinutesOptions = () => Array.from({ length: 121 }, (_, i) => i + 1); // 1-120 minutes
+const generateSecondsOptions = () => Array.from({ length: 301 }, (_, i) => i + 1); // 1-300 seconds
+const generateDurationOptions = () => Array.from({ length: 180 }, (_, i) => i + 5); // 5-184 minutes
 
 interface ExerciseData {
   name: string;
@@ -43,14 +52,23 @@ export default function NewWorkoutScreen() {
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [startTime] = useState(Date.now());
+  
+  // Duration state
+  const [workoutDuration, setWorkoutDuration] = useState(30);
+  const [tempDuration, setTempDuration] = useState(30);
+  const [showDurationPicker, setShowDurationPicker] = useState(false);
 
   // State for exercise configuration modal
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<SelectedTemplate | null>(null);
-  const [configSets, setConfigSets] = useState("");
-  const [configReps, setConfigReps] = useState("");
-  const [configWeight, setConfigWeight] = useState("");
+  const [configSets, setConfigSets] = useState(3);
+  const [configReps, setConfigReps] = useState(10);
+  const [configWeight, setConfigWeight] = useState(0);
+  
+  // Temp state for pickers (commit on Done, revert on Cancel)
+  const [tempConfigSets, setTempConfigSets] = useState(3);
+  const [tempConfigReps, setTempConfigReps] = useState(10);
+  const [tempConfigWeight, setTempConfigWeight] = useState(0);
 
   const { user } = useAuth();
   const { preferences, colors, accentColor } = useSettings();
@@ -77,9 +95,15 @@ export default function NewWorkoutScreen() {
 
   const handleSelectTemplate = (template: SelectedTemplate) => {
     setSelectedTemplate(template);
-    setConfigSets(String(template.defaultSets));
-    setConfigReps(String(template.defaultReps));
-    setConfigWeight(String(displayWeight(template.defaultWeight)));
+    const sets = template.defaultSets;
+    const reps = template.defaultReps;
+    const weight = displayWeight(template.defaultWeight);
+    setConfigSets(sets);
+    setConfigReps(reps);
+    setConfigWeight(weight);
+    setTempConfigSets(sets);
+    setTempConfigReps(reps);
+    setTempConfigWeight(weight);
     setShowExercisePicker(false);
     setShowConfigModal(true);
   };
@@ -87,17 +111,17 @@ export default function NewWorkoutScreen() {
   const handleConfirmExercise = () => {
     if (!selectedTemplate) return;
 
-    const sets = parseInt(configSets, 10);
-    const reps = parseInt(configReps, 10);
-    const weight = parseInt(configWeight, 10);
+    const sets = configSets;
+    const reps = configReps;
+    const weight = configWeight;
 
-    if (isNaN(sets) || sets < 1) {
+    if (sets < 1) {
       return;
     }
-    if (isNaN(reps) || reps < 1) {
+    if (reps < 1) {
       return;
     }
-    if (isNaN(weight) || weight < 0) {
+    if (weight < 0) {
       return;
     }
 
@@ -151,12 +175,11 @@ export default function NewWorkoutScreen() {
     setLoading(true);
 
     try {
-      const duration = Math.round((Date.now() - startTime) / 60000);
       const workoutId = await createWorkout({
         userId: user.id,
         name: workoutName,
         date: Date.now(),
-        duration: Math.max(duration, 1),
+        duration: workoutDuration,
       });
 
       // Create exercises
@@ -233,6 +256,25 @@ export default function NewWorkoutScreen() {
             })}
           </Text>
         </View>
+
+        {/* Duration Picker */}
+        <TouchableOpacity
+          style={[styles.durationButton, { backgroundColor: colors.surface }]}
+          onPress={() => {
+            setTempDuration(workoutDuration);
+            setShowDurationPicker(true);
+          }}
+          activeOpacity={0.7}
+        >
+          <View style={styles.durationButtonContent}>
+            <Ionicons name="time-outline" size={22} color={accentColor} />
+            <View>
+              <Text style={[styles.durationLabel, { color: colors.textSecondary }]}>Duration</Text>
+              <Text style={[styles.durationValue, { color: colors.text }]}>{workoutDuration} minutes</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
 
         {/* Exercises */}
         {exercises.length > 0 && (
@@ -339,85 +381,132 @@ export default function NewWorkoutScreen() {
       <Modal
         visible={showConfigModal}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={handleCancelConfig}
       >
         <View style={styles.configModalOverlay}>
           <View style={[styles.configModalContent, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.configModalTitle, { color: colors.text }]}>
-              {selectedTemplate?.name}
-            </Text>
-            <Text style={[styles.configModalSubtitle, { color: colors.textSecondary }]}>
-              Customize your exercise
-            </Text>
+            {/* Header with Cancel and Done */}
+            <View style={[styles.pickerModalHeader, { borderBottomColor: colors.surfaceLight }]}>
+              <TouchableOpacity onPress={handleCancelConfig}>
+                <Text style={[styles.pickerModalCancel, { color: colors.textSecondary }]}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={[styles.pickerModalTitle, { color: colors.text }]}>
+                {selectedTemplate?.name}
+              </Text>
+              <TouchableOpacity onPress={handleConfirmExercise}>
+                <Text style={[styles.pickerModalDone, { color: accentColor }]}>Add</Text>
+              </TouchableOpacity>
+            </View>
 
             {(() => {
               const isCardio = selectedTemplate?.category === "cardio";
-              const isTimedExercise = selectedTemplate?.name.toLowerCase().includes("plank") || 
-                                      selectedTemplate?.name.toLowerCase().includes("hold");
+              const isTimedExercise = selectedTemplate?.name?.toLowerCase().includes("plank") || 
+                                      selectedTemplate?.name?.toLowerCase().includes("hold");
               const timeLabel = isCardio ? "Minutes" : isTimedExercise ? "Seconds" : "Reps";
+              const timeOptions = isCardio ? generateMinutesOptions() : isTimedExercise ? generateSecondsOptions() : generateRepsOptions();
               
               return (
-                <View style={styles.configInputRow}>
+                <View style={styles.configPickerContainer}>
                   {!isCardio && (
-                    <View style={styles.configInputGroup}>
-                      <Text style={[styles.configLabel, { color: colors.textSecondary }]}>Sets</Text>
-                      <TextInput
-                        style={[styles.configInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
-                        value={configSets}
-                        onChangeText={setConfigSets}
-                        keyboardType="number-pad"
-                        placeholder="3"
-                        placeholderTextColor={colors.textMuted}
-                        autoFocus={!isCardio}
-                      />
+                    <View style={styles.configPickerColumn}>
+                      <Text style={[styles.configPickerLabel, { color: colors.textSecondary }]}>Sets</Text>
+                      <View style={[styles.pickerWrapper, { backgroundColor: colors.background }]}>
+                        <Picker
+                          selectedValue={tempConfigSets}
+                          onValueChange={(value) => {
+                            setTempConfigSets(value);
+                            setConfigSets(value);
+                          }}
+                          style={styles.picker}
+                          itemStyle={[styles.pickerItem, { color: colors.text }]}
+                        >
+                          {generateSetsOptions().map((num) => (
+                            <Picker.Item key={num} label={String(num)} value={num} />
+                          ))}
+                        </Picker>
+                      </View>
                     </View>
                   )}
-                  <View style={styles.configInputGroup}>
-                    <Text style={[styles.configLabel, { color: colors.textSecondary }]}>{timeLabel}</Text>
-                    <TextInput
-                      style={[styles.configInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
-                      value={configReps}
-                      onChangeText={setConfigReps}
-                      keyboardType="number-pad"
-                      placeholder={isCardio ? "30" : "10"}
-                      placeholderTextColor={colors.textMuted}
-                      autoFocus={isCardio}
-                    />
+                  <View style={styles.configPickerColumn}>
+                    <Text style={[styles.configPickerLabel, { color: colors.textSecondary }]}>{timeLabel}</Text>
+                    <View style={[styles.pickerWrapper, { backgroundColor: colors.background }]}>
+                      <Picker
+                        selectedValue={tempConfigReps}
+                        onValueChange={(value) => {
+                          setTempConfigReps(value);
+                          setConfigReps(value);
+                        }}
+                        style={styles.picker}
+                        itemStyle={[styles.pickerItem, { color: colors.text }]}
+                      >
+                        {timeOptions.map((num) => (
+                          <Picker.Item key={num} label={String(num)} value={num} />
+                        ))}
+                      </Picker>
+                    </View>
                   </View>
                   {!isCardio && (
-                    <View style={styles.configInputGroup}>
-                      <Text style={[styles.configLabel, { color: colors.textSecondary }]}>
+                    <View style={styles.configPickerColumn}>
+                      <Text style={[styles.configPickerLabel, { color: colors.textSecondary }]}>
                         {preferences.weightUnit.toUpperCase()}
                       </Text>
-                      <TextInput
-                        style={[styles.configInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
-                        value={configWeight}
-                        onChangeText={setConfigWeight}
-                        keyboardType="number-pad"
-                        placeholder="0"
-                        placeholderTextColor={colors.textMuted}
-                      />
+                      <View style={[styles.pickerWrapper, { backgroundColor: colors.background }]}>
+                        <Picker
+                          selectedValue={tempConfigWeight}
+                          onValueChange={(value) => {
+                            setTempConfigWeight(value);
+                            setConfigWeight(value);
+                          }}
+                          style={styles.picker}
+                          itemStyle={[styles.pickerItem, { color: colors.text }]}
+                        >
+                          {generateWeightOptions().map((num) => (
+                            <Picker.Item key={num} label={String(num)} value={num} />
+                          ))}
+                        </Picker>
+                      </View>
                     </View>
                   )}
                 </View>
               );
             })()}
+          </View>
+        </View>
+      </Modal>
 
-            <View style={styles.configButtons}>
-              <TouchableOpacity
-                style={[styles.configButton, { backgroundColor: colors.background }]}
-                onPress={handleCancelConfig}
-              >
-                <Text style={[styles.configButtonText, { color: colors.textSecondary }]}>Back</Text>
+      {/* Duration Picker Modal */}
+      <Modal
+        visible={showDurationPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDurationPicker(false)}
+      >
+        <View style={styles.durationModalOverlay}>
+          <View style={[styles.durationModalContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.pickerModalHeader, { borderBottomColor: colors.surfaceLight }]}>
+              <TouchableOpacity onPress={() => setShowDurationPicker(false)}>
+                <Text style={[styles.pickerModalCancel, { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.configButton, { backgroundColor: accentColor }]}
-                onPress={handleConfirmExercise}
-              >
-                <Ionicons name="add" size={20} color="#FFFFFF" />
-                <Text style={[styles.configButtonText, { color: "#FFFFFF" }]}>Add</Text>
+              <Text style={[styles.pickerModalTitle, { color: colors.text }]}>Duration</Text>
+              <TouchableOpacity onPress={() => {
+                setWorkoutDuration(tempDuration);
+                setShowDurationPicker(false);
+              }}>
+                <Text style={[styles.pickerModalDone, { color: accentColor }]}>Done</Text>
               </TouchableOpacity>
+            </View>
+            <View style={styles.durationPickerContainer}>
+              <Picker
+                selectedValue={tempDuration}
+                onValueChange={(value) => setTempDuration(value)}
+                style={styles.durationPicker}
+                itemStyle={[styles.pickerItem, { color: colors.text }]}
+              >
+                {generateDurationOptions().map((num) => (
+                  <Picker.Item key={num} label={`${num} min`} value={num} />
+                ))}
+              </Picker>
             </View>
           </View>
         </View>
@@ -463,6 +552,45 @@ const styles = StyleSheet.create({
   },
   dateText: {
     ...typography.caption,
+  },
+  durationButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  durationButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  durationLabel: {
+    ...typography.caption,
+    marginBottom: 2,
+  },
+  durationValue: {
+    ...typography.body,
+    fontWeight: "600",
+  },
+  durationModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "flex-end",
+  },
+  durationModalContent: {
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    paddingBottom: Platform.OS === "ios" ? 40 : 20,
+  },
+  durationPickerContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  durationPicker: {
+    width: "100%",
+    height: 200,
   },
   exercisesSection: {
     marginBottom: spacing.md,
@@ -547,51 +675,63 @@ const styles = StyleSheet.create({
   configModalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.6)",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    paddingTop: 120,
-    paddingHorizontal: spacing.lg,
+    justifyContent: "flex-end",
   },
   configModalContent: {
-    width: "100%",
-    maxWidth: 340,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    paddingBottom: Platform.OS === "ios" ? 40 : 20,
   },
-  configModalTitle: {
-    ...typography.h2,
-    textAlign: "center",
-    marginBottom: spacing.xs,
-  },
-  configModalSubtitle: {
-    ...typography.caption,
-    textAlign: "center",
-    marginBottom: spacing.lg,
-  },
-  configInputRow: {
+  pickerModalHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: spacing.lg,
-  },
-  configInputGroup: {
-    width: "30%",
     alignItems: "center",
-  },
-  configLabel: {
-    ...typography.caption,
-    marginBottom: spacing.xs,
-    textAlign: "center",
-  },
-  configInput: {
-    ...typography.body,
-    width: "100%",
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    textAlign: "center",
-    fontSize: 20,
+    borderBottomWidth: 1,
+  },
+  pickerModalCancel: {
+    ...typography.body,
+    fontSize: 17,
+  },
+  pickerModalTitle: {
+    ...typography.body,
     fontWeight: "600",
+    fontSize: 17,
+  },
+  pickerModalDone: {
+    ...typography.body,
+    fontWeight: "600",
+    fontSize: 17,
+  },
+  configPickerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+  },
+  configPickerColumn: {
+    flex: 1,
+    alignItems: "center",
+    maxWidth: 120,
+  },
+  configPickerLabel: {
+    ...typography.caption,
+    marginBottom: spacing.sm,
+    textAlign: "center",
+    fontWeight: "600",
+  },
+  pickerWrapper: {
+    borderRadius: borderRadius.md,
+    overflow: "hidden",
+    width: "100%",
+  },
+  picker: {
+    width: "100%",
+    height: 180,
+  },
+  pickerItem: {
+    fontSize: 22,
   },
   configButtons: {
     flexDirection: "row",

@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth-context";
 import { sendWorkoutCompletedNotification } from "@/lib/notifications";
 import { useSettings } from "@/lib/settings-context";
 import { Ionicons } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
 import { useMutation, useQuery } from "convex/react";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
@@ -30,6 +31,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+// Generate picker options
+const generateDurationOptions = () => Array.from({ length: 180 }, (_, i) => i + 5); // 5-184 minutes
+const generateWeightOptions = () => Array.from({ length: 301 }, (_, i) => i); // 0-300
+const generateRepsOptions = () => Array.from({ length: 100 }, (_, i) => i + 1); // 1-100
+
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const workoutId = id as Id<"workouts">;
@@ -38,7 +44,7 @@ export default function WorkoutDetailScreen() {
 
   // State for editing modals
   const [durationModalVisible, setDurationModalVisible] = React.useState(false);
-  const [selectedDuration, setSelectedDuration] = React.useState(30);
+  const [tempDuration, setTempDuration] = React.useState(30);
   const [nameModalVisible, setNameModalVisible] = React.useState(false);
   const [editName, setEditName] = React.useState("");
   const [editSetModalVisible, setEditSetModalVisible] = React.useState(false);
@@ -46,9 +52,11 @@ export default function WorkoutDetailScreen() {
     exerciseId: Id<"exercises">;
     exerciseName: string;
     setIndex: number;
-    weight: string;
-    reps: string;
+    weight: number;
+    reps: number;
   } | null>(null);
+  const [tempWeight, setTempWeight] = React.useState(0);
+  const [tempReps, setTempReps] = React.useState(10);
   const [showExercisePicker, setShowExercisePicker] = React.useState(false);
 
   const workout = useQuery(api.workouts.getById, user ? { userId: user.id, workoutId } : "skip");
@@ -117,29 +125,16 @@ export default function WorkoutDetailScreen() {
     setShowExercisePicker(false);
   };
 
-  // Duration options for picker (5 to 180 minutes)
-  const durationOptions = React.useMemo(() => {
-    const options = [];
-    // 5-minute increments up to 60
-    for (let i = 5; i <= 60; i += 5) options.push(i);
-    // 10-minute increments from 70 to 120
-    for (let i = 70; i <= 120; i += 10) options.push(i);
-    // 30-minute increments from 150 to 180
-    options.push(150, 180);
-    return options;
-  }, []);
-
   const handleEditDuration = () => {
     if (workout) {
-      setSelectedDuration(workout.duration);
+      setTempDuration(workout.duration);
       setDurationModalVisible(true);
     }
   };
 
-  const handleSelectDuration = async (duration: number) => {
+  const handleSaveDuration = async () => {
     if (!user || !workout) return;
-    setSelectedDuration(duration);
-    await updateWorkout({ userId: user.id, workoutId, duration });
+    await updateWorkout({ userId: user.id, workoutId, duration: tempDuration });
     setDurationModalVisible(false);
   };
 
@@ -165,26 +160,30 @@ export default function WorkoutDetailScreen() {
     const exercise = exercises?.find((e) => e._id === exerciseId);
     if (!exercise) return;
     const set = exercise.sets[setIndex];
+    const weight = displayWeight(set.weight);
+    const reps = set.reps;
     setEditingExercise({
       exerciseId,
       exerciseName: exercise.name,
       setIndex,
-      weight: String(displayWeight(set.weight)),
-      reps: String(set.reps),
+      weight,
+      reps,
     });
+    setTempWeight(weight);
+    setTempReps(reps);
     setEditSetModalVisible(true);
   };
 
   const handleSaveSet = async () => {
     if (!user || !editingExercise) return;
-    const weight = parseInt(editingExercise.weight, 10);
-    const reps = parseInt(editingExercise.reps, 10);
+    const weight = editingExercise.weight;
+    const reps = editingExercise.reps;
     
-    if (isNaN(weight) || weight < 0) {
+    if (weight < 0) {
       Alert.alert("Invalid Weight", "Please enter a valid weight.");
       return;
     }
-    if (isNaN(reps) || reps < 1) {
+    if (reps < 1) {
       Alert.alert("Invalid Reps", "Please enter a valid number of reps.");
       return;
     }
@@ -454,48 +453,32 @@ export default function WorkoutDetailScreen() {
       <Modal
         visible={durationModalVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setDurationModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, styles.durationModalContent, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Select Duration</Text>
-            <ScrollView 
-              style={styles.durationScrollView}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.durationScrollContent}
-            >
-              {durationOptions.map((duration) => (
-                <TouchableOpacity
-                  key={duration}
-                  style={[
-                    styles.durationOption,
-                    { backgroundColor: colors.background },
-                    selectedDuration === duration && { backgroundColor: accentColor + "20", borderColor: accentColor },
-                  ]}
-                  onPress={() => handleSelectDuration(duration)}
-                >
-                  <Text
-                    style={[
-                      styles.durationOptionText,
-                      { color: colors.text },
-                      selectedDuration === duration && { color: accentColor, fontWeight: "700" },
-                    ]}
-                  >
-                    {duration} min
-                  </Text>
-                  {selectedDuration === duration && (
-                    <Ionicons name="checkmark-circle" size={22} color={accentColor} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <TouchableOpacity
-              style={[styles.durationCancelButton, { backgroundColor: colors.background }]}
-              onPress={() => setDurationModalVisible(false)}
-            >
-              <Text style={[styles.modalButtonText, { color: colors.textSecondary }]}>Cancel</Text>
-            </TouchableOpacity>
+        <View style={styles.pickerModalOverlay}>
+          <View style={[styles.pickerModalContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.pickerModalHeader, { borderBottomColor: colors.surfaceLight }]}>
+              <TouchableOpacity onPress={() => setDurationModalVisible(false)}>
+                <Text style={[styles.pickerModalCancel, { color: colors.textSecondary }]}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={[styles.pickerModalTitle, { color: colors.text }]}>Duration</Text>
+              <TouchableOpacity onPress={handleSaveDuration}>
+                <Text style={[styles.pickerModalDone, { color: accentColor }]}>Done</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.singlePickerContainer}>
+              <Picker
+                selectedValue={tempDuration}
+                onValueChange={(value) => setTempDuration(value)}
+                style={styles.singlePicker}
+                itemStyle={[styles.pickerItem, { color: colors.text }]}
+              >
+                {generateDurationOptions().map((num) => (
+                  <Picker.Item key={num} label={`${num} min`} value={num} />
+                ))}
+              </Picker>
+            </View>
           </View>
         </View>
       </Modal>
@@ -540,12 +523,23 @@ export default function WorkoutDetailScreen() {
       <Modal
         visible={editSetModalVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setEditSetModalVisible(false)}
       >
-        <View style={[styles.modalOverlay, { justifyContent: "flex-start", paddingTop: 120 }]}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Edit Set</Text>
+        <View style={styles.pickerModalOverlay}>
+          <View style={[styles.pickerModalContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.pickerModalHeader, { borderBottomColor: colors.surfaceLight }]}>
+              <TouchableOpacity onPress={() => {
+                setEditSetModalVisible(false);
+                setEditingExercise(null);
+              }}>
+                <Text style={[styles.pickerModalCancel, { color: colors.textSecondary }]}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={[styles.pickerModalTitle, { color: colors.text }]}>Edit Set</Text>
+              <TouchableOpacity onPress={handleSaveSet}>
+                <Text style={[styles.pickerModalDone, { color: accentColor }]}>Save</Text>
+              </TouchableOpacity>
+            </View>
             
             {(() => {
               // Check if this is a cardio or timed exercise
@@ -553,57 +547,58 @@ export default function WorkoutDetailScreen() {
               const isCardio = templates?.find(t => t.name === editingExercise?.exerciseName)?.category === "cardio";
               const isTimedExercise = exerciseName.includes("plank") || exerciseName.includes("hold") || exerciseName.includes("wall sit");
               const timeLabel = isCardio ? "Minutes" : isTimedExercise ? "Seconds" : "Reps";
+              const timeOptions = isCardio 
+                ? Array.from({ length: 120 }, (_, i) => i + 1) 
+                : isTimedExercise 
+                  ? Array.from({ length: 300 }, (_, i) => i + 1)
+                  : generateRepsOptions();
               
               return (
-                <>
+                <View style={styles.editSetPickerContainer}>
                   {!isCardio && (
-                    <View style={styles.modalInputGroup}>
-                      <Text style={[styles.modalLabel, { color: colors.textSecondary }]}>Weight ({preferences.weightUnit})</Text>
-                      <TextInput
-                        style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
-                        value={editingExercise?.weight ?? ""}
-                        onChangeText={(text: string) => setEditingExercise((prev) => prev ? { ...prev, weight: text } : null)}
-                        keyboardType="number-pad"
-                        placeholder="0"
-                        placeholderTextColor={colors.textMuted}
-                        autoFocus={!isCardio}
-                      />
+                    <View style={styles.editSetPickerColumn}>
+                      <Text style={[styles.editSetPickerLabel, { color: colors.textSecondary }]}>
+                        Weight ({preferences.weightUnit.toUpperCase()})
+                      </Text>
+                      <View style={[styles.editSetPickerWrapper, { backgroundColor: colors.background }]}>
+                        <Picker
+                          selectedValue={tempWeight}
+                          onValueChange={(value) => {
+                            setTempWeight(value);
+                            setEditingExercise(prev => prev ? { ...prev, weight: value } : null);
+                          }}
+                          style={styles.editSetPicker}
+                          itemStyle={[styles.pickerItem, { color: colors.text }]}
+                        >
+                          {generateWeightOptions().map((num) => (
+                            <Picker.Item key={num} label={String(num)} value={num} />
+                          ))}
+                        </Picker>
+                      </View>
                     </View>
                   )}
 
-                  <View style={styles.modalInputGroup}>
-                    <Text style={[styles.modalLabel, { color: colors.textSecondary }]}>{timeLabel}</Text>
-                    <TextInput
-                      style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.textMuted }]}
-                      value={editingExercise?.reps ?? ""}
-                      onChangeText={(text: string) => setEditingExercise((prev) => prev ? { ...prev, reps: text } : null)}
-                      keyboardType="number-pad"
-                      placeholder="0"
-                      placeholderTextColor={colors.textMuted}
-                      autoFocus={isCardio}
-                    />
+                  <View style={styles.editSetPickerColumn}>
+                    <Text style={[styles.editSetPickerLabel, { color: colors.textSecondary }]}>{timeLabel}</Text>
+                    <View style={[styles.editSetPickerWrapper, { backgroundColor: colors.background }]}>
+                      <Picker
+                        selectedValue={tempReps}
+                        onValueChange={(value) => {
+                          setTempReps(value);
+                          setEditingExercise(prev => prev ? { ...prev, reps: value } : null);
+                        }}
+                        style={styles.editSetPicker}
+                        itemStyle={[styles.pickerItem, { color: colors.text }]}
+                      >
+                        {timeOptions.map((num) => (
+                          <Picker.Item key={num} label={String(num)} value={num} />
+                        ))}
+                      </Picker>
+                    </View>
                   </View>
-                </>
+                </View>
               );
             })()}
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: colors.background }]}
-                onPress={() => {
-                  setEditSetModalVisible(false);
-                  setEditingExercise(null);
-                }}
-              >
-                <Text style={[styles.modalButtonText, { color: colors.textSecondary }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: accentColor }]}
-                onPress={handleSaveSet}
-              >
-                <Text style={[styles.modalButtonText, { color: "#FFFFFF" }]}>Save</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </Modal>
@@ -892,35 +887,75 @@ const styles = StyleSheet.create({
     ...typography.body,
     fontWeight: "600",
   },
-  // Duration picker styles
-  durationModalContent: {
-    maxHeight: 450,
+  // Apple-style Picker Modal styles
+  pickerModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "flex-end",
   },
-  durationScrollView: {
-    maxHeight: 300,
+  pickerModalContent: {
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    paddingBottom: Platform.OS === "ios" ? 40 : 20,
   },
-  durationScrollContent: {
-    gap: spacing.sm,
-  },
-  durationOption: {
+  pickerModalHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.md,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  durationOptionText: {
-    ...typography.body,
-    fontSize: 18,
-  },
-  durationCancelButton: {
-    marginTop: spacing.md,
     paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
+    borderBottomWidth: 1,
+  },
+  pickerModalCancel: {
+    ...typography.body,
+    fontSize: 17,
+  },
+  pickerModalTitle: {
+    ...typography.body,
+    fontWeight: "600",
+    fontSize: 17,
+  },
+  pickerModalDone: {
+    ...typography.body,
+    fontWeight: "600",
+    fontSize: 17,
+  },
+  singlePickerContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  singlePicker: {
+    width: "100%",
+    height: 200,
+  },
+  pickerItem: {
+    fontSize: 22,
+  },
+  editSetPickerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+  },
+  editSetPickerColumn: {
+    flex: 1,
     alignItems: "center",
+    maxWidth: 150,
+  },
+  editSetPickerLabel: {
+    ...typography.caption,
+    marginBottom: spacing.sm,
+    textAlign: "center",
+    fontWeight: "600",
+  },
+  editSetPickerWrapper: {
+    borderRadius: borderRadius.md,
+    overflow: "hidden",
+    width: "100%",
+  },
+  editSetPicker: {
+    width: "100%",
+    height: 180,
   },
   // Add Exercise Button
   addExerciseButton: {

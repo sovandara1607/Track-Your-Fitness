@@ -1,28 +1,40 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useColorScheme } from "react-native";
 import {
-   defaultNotificationSettings,
-   defaultPreferencesSettings,
-   defaultThemeSettings,
-   getNotificationSettings,
-   getPreferencesSettings,
-   getThemeSettings,
-   NotificationSettings,
-   PreferencesSettings,
-   saveNotificationSettings,
-   savePreferencesSettings,
-   saveThemeSettings,
-   ThemeSettings,
+  defaultNotificationSettings,
+  defaultPreferencesSettings,
+  defaultThemeSettings,
+  getNotificationSettings,
+  getPreferencesSettings,
+  getThemeSettings,
+  NotificationSettings,
+  PreferencesSettings,
+  saveNotificationSettings,
+  savePreferencesSettings,
+  saveThemeSettings,
+  ThemeSettings,
 } from "./storage";
 
-// Accent color mapping
-const accentColors: Record<string, string> = {
+// Accent color mapping for light theme
+const accentColorsLight: Record<string, string> = {
   blue: "#007AFF",
   green: "#34C759",
   purple: "#AF52DE",
   orange: "#FF9500",
   pink: "#FF2D55",
   teal: "#5AC8FA",
+  black: "#1F2937",
+};
+
+// Accent color mapping for dark theme (black becomes silver/light gray for visibility)
+const accentColorsDark: Record<string, string> = {
+  blue: "#0A84FF",
+  green: "#30D158",
+  purple: "#BF5AF2",
+  orange: "#FF9F0A",
+  pink: "#FF375F",
+  teal: "#64D2FF",
+  black: "#9CA3AF", // Light gray for visibility in dark mode
 };
 
 // Light theme colors
@@ -80,11 +92,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [preferences, setPreferences] = useState<PreferencesSettings>(defaultPreferencesSettings);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Computed accent color based on theme setting
-  const accentColor = useMemo(() => {
-    return accentColors[theme.accentColor] || accentColors.blue;
-  }, [theme.accentColor]);
-
   // Determine if dark mode based on setting
   const isDark = useMemo(() => {
     if (theme.theme === "system") {
@@ -92,6 +99,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }
     return theme.theme === "dark";
   }, [theme.theme, systemColorScheme]);
+
+  // Computed accent color based on theme setting and dark/light mode
+  const accentColor = useMemo(() => {
+    const colorMap = isDark ? accentColorsDark : accentColorsLight;
+    return colorMap[theme.accentColor] || colorMap.blue;
+  }, [theme.accentColor, isDark]);
 
   // Get dynamic colors based on theme
   const colors = useMemo(() => {

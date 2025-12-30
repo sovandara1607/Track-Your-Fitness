@@ -18,6 +18,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Animated,
+  Image,
   Modal,
   Platform,
   RefreshControl,
@@ -104,6 +105,10 @@ export default function HomeScreen() {
   const stats = useQuery(
     api.workouts.getStats,
     user ? { userId: user.id } : "skip",
+  );
+  const profile = useQuery(
+    api.profile.getProfile,
+    user ? { userId: user.id as Id<"users"> } : "skip",
   );
   const weeklyProgress = useQuery(
     api.workouts.getWeeklyProgress,
@@ -245,7 +250,8 @@ export default function HomeScreen() {
 
   // Get personalized greeting
   const greeting = useMemo(() => getGreeting(), []);
-  const firstName = user?.name?.split(" ")[0] || "there";
+  const displayName = profile?.displayName || profile?.name || user?.name;
+  const firstName = displayName?.split(" ")[0] || "there";
 
   const handleLongPress = (workout: { _id: Id<"workouts">; name: string; completed: boolean }) => {
     if (Platform.OS !== "web") {
@@ -325,9 +331,26 @@ export default function HomeScreen() {
 
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={[styles.greeting, { color: colors.text }]}>{greeting}, {firstName} 👋</Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Ready to crush your workout?</Text>
+          <TouchableOpacity 
+            style={[styles.headerAvatar, { backgroundColor: colors.surface }]}
+            onPress={() => router.push("/(tabs)/profile")}
+          >
+            {profile?.profileImageUrl ? (
+              <Image
+                source={{ uri: profile.profileImageUrl }}
+                style={styles.headerAvatarImage}
+              />
+            ) : (
+              <Ionicons name="person" size={28} color={accentColor} />
+            )}
+          </TouchableOpacity>
+          <View style={styles.headerText}>
+            <Text style={[styles.greeting, { color: colors.text }]}>
+              {greeting}, {firstName} 👋
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Ready to crush your workout?
+            </Text>
           </View>
         </View>
 
@@ -700,16 +723,35 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: spacing.xl,
+    paddingVertical: spacing.sm,
+  },
+  headerText: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  headerAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  headerAvatarImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
   },
   greeting: {
     ...typography.h2,
     marginBottom: spacing.xs,
+    lineHeight: 32,
   },
   subtitle: {
     ...typography.body,
+    lineHeight: 22,
   },
   // Weekly Goal Card
   weeklyCard: {
