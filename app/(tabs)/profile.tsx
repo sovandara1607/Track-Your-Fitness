@@ -216,7 +216,7 @@ export default function ProfileScreen() {
 
         {/* Version Info */}
         <View style={styles.versionContainer}>
-          <Text style={[styles.versionText, { color: colors.textMuted }]}>LIFT v1.0.0</Text>
+          <Text style={[styles.versionText, { color: colors.textMuted }]}>តោះ LIFT v1.0.0</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
