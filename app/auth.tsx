@@ -129,7 +129,7 @@ export default function AuthScreen() {
             </View>
 
             <Button
-              title={isLogin ? "Sign In" : "Sign Up"}
+              title={isLogin ? "Log In" : "Sign Up"}
               onPress={handleAuth}
               loading={loading}
               style={styles.primaryButton}
