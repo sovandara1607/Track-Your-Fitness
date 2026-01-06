@@ -40,16 +40,16 @@ const getGreeting = () => {
 
 // Motivational quotes for pull-to-refresh
 const MOTIVATIONAL_QUOTES = [
-  { quote: "The only bad workout is the one that didn't happen.", author: "Unknown" },
+  { quote: "The only bad workout is the one that didn't happen.", author: "Sovandara Rith" },
   { quote: "Strength doesn't come from what you can do. It comes from overcoming the things you once thought you couldn't.", author: "Rikki Rogers" },
   { quote: "The pain you feel today will be the strength you feel tomorrow.", author: "Arnold Schwarzenegger" },
-  { quote: "Your body can stand almost anything. It's your mind that you have to convince.", author: "Tomda69" },
+  { quote: "Your body can stand almost anything. It's your mind that you have to convince.", author: "Sovandara Rith" },
   { quote: "Success isn't always about greatness. It's about consistency.", author: "Dwayne Johnson" },
   { quote: "The difference between try and triumph is a little 'umph'.", author: "Marvin Phillips" },
-  { quote: "Push yourself because no one else is going to do it for you.", author: "Tomda69" },
+  { quote: "Push yourself because no one else is going to do it for you.", author: "Sovandara Rith" },
   { quote: "Fitness is not about being better than someone else. It's about being better than you used to be.", author: "Khloe Kardashian" },
   { quote: "The only way to define your limits is by going beyond them.", author: "Arthur Clarke" },
-  { quote: "Don't wish for a good body, work for it.", author: "Tomda69" },
+  { quote: "Don't wish for a good body, work for it.", author: "Sovandara Rith" },
 ];
 
 // Days of the week
