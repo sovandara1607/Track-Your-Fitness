@@ -65,7 +65,7 @@ export default function AuthScreen() {
           {/* Hero Section */}
           <View style={styles.heroSection}>
             <View style={[styles.logoContainer, { backgroundColor: accentColor + "20" }]}>
-              <Ionicons name="fitness" size={64} color={accentColor} />
+              <Ionicons name="barbell" size={64} color={accentColor} />
             </View>
             <Text style={[styles.heroTitle, { color: colors.text }]}>TosLIFT</Text>
             <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>Build Your Strongest Self</Text>
