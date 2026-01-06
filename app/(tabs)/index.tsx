@@ -54,7 +54,7 @@ const MOTIVATIONAL_QUOTES = [
 
 // Days of the week
 const DAYS = ["S", "M", "T", "W", "T", "F", "S"];
-const WEEKLY_GOAL = 4; // Default weekly goal
+const WEEKLY_GOAL = 8; // Default weekly goal
 
 export default function HomeScreen() {
   const router = useRouter();
