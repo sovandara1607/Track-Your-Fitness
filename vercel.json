@@ -1,5 +1,5 @@
 {
-  "buildCommand": "expo export -p web",
-  "outputDirectory": "dist",
+  "buildCommand": "npx expo export -p web",
+  "outputDirectory": "web-build",
   "installCommand": "npm install --legacy-peer-deps"
 }
