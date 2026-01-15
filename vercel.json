@@ -1,7 +1,5 @@
 {
-  "framework": null,
-  "buildCommand": "npm run build",
-  "installCommand": "npm install --legacy-peer-deps",
+  "buildCommand": "expo export -p web",
   "outputDirectory": "dist",
-  "devCommand": "npm run web"
+  "installCommand": "npm install --legacy-peer-deps"
 }
